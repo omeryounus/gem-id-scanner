@@ -1,0 +1,133 @@
+{
+  "run_id": "run-02",
+  "timestamp": "2026-10-04 14:35:46Z",
+  "model": "gemini-1.5-flash",
+  "verdict": "PASS",
+  "verdict_rationale": [
+    "All Tier A and Tier B accuracy bars met.",
+    "Confidence calibration bands are verified honest (Confirmed >=85%).",
+    "Lookalike twin warning rate meets >=80% spec.",
+    "Confident wrong answers within tolerance (0 <= 2)."
+  ],
+  "metrics": {
+    "tier_a": {
+      "total": 60,
+      "top1_count": 50,
+      "top1_pct": 83.3,
+      "top3_count": 57,
+      "top3_pct": 95.0,
+      "family_count": 0,
+      "family_pct": 0.0,
+      "miss_count": 3,
+      "miss_pct": 5.0
+    },
+    "tier_b": {
+      "total": 40,
+      "top1_count": 29,
+      "top1_pct": 72.5,
+      "top3_count": 38,
+      "top3_pct": 95.0,
+      "family_count": 0,
+      "family_pct": 0.0,
+      "miss_count": 2,
+      "miss_pct": 5.0
+    },
+    "all": {
+      "total": 100,
+      "top1_count": 79,
+      "top1_pct": 79.0,
+      "top3_count": 95,
+      "top3_pct": 95.0,
+      "family_count": 0,
+      "family_pct": 0.0,
+      "miss_count": 5,
+      "miss_pct": 5.0
+    },
+    "calibration": {
+      "confirmed": {
+        "count": 59,
+        "top1_accuracy": 100.0,
+        "top3_accuracy": 100.0
+      },
+      "likely": {
+        "count": 39,
+        "top1_accuracy": 51.3,
+        "top3_accuracy": 87.2
+      },
+      "best_guesses": {
+        "count": 2,
+        "top1_accuracy": 0.0,
+        "top3_accuracy": 100.0
+      }
+    },
+    "confidence_spread": {
+      "overall": {
+        "count": 100,
+        "mean_spread": 0.696,
+        "min_spread": 0.17,
+        "max_spread": 0.92,
+        "decisive_count": 88,
+        "moderate_count": 12,
+        "tight_count": 0
+      },
+      "tier_a": {
+        "count": 60,
+        "mean_spread": 0.771,
+        "min_spread": 0.28,
+        "max_spread": 0.92,
+        "decisive_count": 55,
+        "moderate_count": 5,
+        "tight_count": 0
+      },
+      "tier_b": {
+        "count": 40,
+        "mean_spread": 0.584,
+        "min_spread": 0.17,
+        "max_spread": 0.8,
+        "decisive_count": 33,
+        "moderate_count": 7,
+        "tight_count": 0
+      },
+      "confirmed_band": {
+        "count": 59,
+        "mean_spread": 0.832,
+        "min_spread": 0.69,
+        "max_spread": 0.92,
+        "decisive_count": 59,
+        "moderate_count": 0,
+        "tight_count": 0
+      },
+      "likely_band": {
+        "count": 39,
+        "mean_spread": 0.515,
+        "min_spread": 0.23,
+        "max_spread": 0.74,
+        "decisive_count": 29,
+        "moderate_count": 10,
+        "tight_count": 0
+      },
+      "best_guesses_band": {
+        "count": 2,
+        "mean_spread": 0.19,
+        "min_spread": 0.17,
+        "max_spread": 0.21,
+        "decisive_count": 0,
+        "moderate_count": 2,
+        "tight_count": 0
+      }
+    },
+    "lookalike_twin_rate": 100.0,
+    "lookalike_twin_hits": 87,
+    "lookalike_eligible_count": 87,
+    "confident_wrong_count": 0,
+    "confident_wrong_samples": [],
+    "error_taxonomy": {
+      "Knowledge gap": 3,
+      "Ranking error": 16,
+      "Photo problem": 2,
+      "Calibration error": 0,
+      "Label doubt": 0
+    },
+    "flagged_minerals": []
+  }
+}

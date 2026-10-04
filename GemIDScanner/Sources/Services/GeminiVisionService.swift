@@ -65,16 +65,51 @@ public final class GeminiVisionService: @unchecked Sendable {
         request.timeoutInterval = 6.5
         
         let promptText = """
-        You are an expert gemologist and mineralogist. Analyze this mineral/rock specimen image.
-        Stage 1 on-device classifier guessed: "\(stage1Hint)".
+        You are an expert gemologist, mineralogist, and crystallographer. Analyze this mineral/rock specimen image.
+        Stage 1 on-device classifier shortlisted: "\(stage1Hint)".
+        
+        IDENTIFICATION METHODOLOGY & RULES:
+        
+        1. OPTICAL & MORPHOLOGICAL EVALUATION:
+        - Examine crystal habit, luster spectrum, cleavage vs conchoidal fracture, color zoning, inclusions, and optical phenomena.
+        
+        2. LOOKALIKE PAIR SEPARATION:
+        - Clear Quartz vs Glass / Topaz / Calcite (conchoidal fracture & striations vs bubbles/swirls or basal/rhombohedral cleavage).
+        - Citrine vs Heat-Treated Amethyst (uniform yellow throughout vs burnt orange tips on opaque white quartz bases).
+        - Turquoise vs Dyed Howlite (natural limonite matrix vs dye pooled in spiderweb fractures).
+        - Emerald vs Green Tourmaline (hexagonal prism & 3-phase inclusions vs vertical striations & triangular cross-section).
+        - Moonstone vs Rainbow Moonstone vs Opalite (billowy adularescence vs multi-color schiller vs orange glow synthetic glass).
+        - Obsidian vs Black Tourmaline (curved glassy conchoidal fracture vs longitudinal striations and columnar prism).
+        - Lapis Lazuli vs Sodalite (deep ultramarine with pyrite specks vs royal blue with white nepheline, no pyrite).
+        - Jade (Nephrite) vs Jadeite / Serpentine / Aventurine (greasy fibrous toughness vs granular vs soft vs aventurescent platelets).
+        
+        3. SHORTLIST-THEN-SEPARATE RANKING DISCIPLINE, TIE-BREAKS, AND ANTI-DEFAULT RULES:
+        - Shortlist Phase: Formulate top 3 candidate hypotheses before committing to rank 1.
+        - Separating Phase: Actively inspect for discriminating diagnostic features to promote a candidate to pred_1 only when visual evidence supports it over lookalikes.
+        - Anti-Default Rules: Never default to generic species (e.g. Clear Quartz, Glass, Slag, Calcite, Dyed Agate) when specific diagnostic traits exist or for tumbled/cut stones without evaluating luster, cleavage, and color depth.
+        - Tie-Breaks: Apply specific physical contrast criteria (e.g. heated tips -> Heat-Treated Amethyst, dye pooling -> Dyed Howlite, multi-color flash -> Rainbow Moonstone, pyrite -> Lapis).
+        - Candidate Spread Calibration: conf_1 - conf_2 margin >= 0.60 for Confirmed (0.85-0.96); 0.15-0.55 for Likely (0.55-0.84); < 0.15 for Best Guesses (<0.55). Never exceed 0.96.
+        
         Return valid JSON in this exact structure:
         {
-          "topMineralName": "Mineral Name",
-          "confidenceScore": 0.92,
-          "reasoning": "Detailed visual explanation of crystal habit, luster, and color.",
-          "visualCues": ["cue 1", "cue 2", "cue 3"],
-          "suggestedTests": ["Mohs scratch test", "Streak test"],
-          "lookalikeDisambiguation": "Explanation of how to separate from nearest lookalike."
+          "pred_1": "Primary Mineral Name",
+          "conf_1": 0.92,
+          "pred_2": "Second Mineral Candidate",
+          "conf_2": 0.05,
+          "pred_3": "Third Mineral Candidate",
+          "conf_3": 0.03,
+          "family": "Mineral Family",
+          "identified_form": "rough | tumbled | cabochon | cut | cluster | slab",
+          "reasoning": "Detailed geological visual explanation applying shortlist-then-separate logic and anti-default validation.",
+          "visual_cues": ["cue 1", "cue 2", "cue 3"],
+          "separating_tests": [
+            {
+              "test_name": "Mohs Hardness Scratch Test",
+              "procedure": "Attempt to scratch glass plate (Mohs 5.5).",
+              "diagnostic_rule": "Amethyst scratches glass; Fluorite cannot."
+            }
+          ],
+          "lookalike_twin": "Nearest lookalike twin species."
         }
         Do not include markdown backticks around the json.
         """
@@ -119,12 +154,34 @@ public final class GeminiVisionService: @unchecked Sendable {
             if let parsedData = cleanJson.data(using: .utf8),
                let parsedDict = try JSONSerialization.jsonObject(with: parsedData) as? [String: Any] {
                 
-                let name = parsedDict["topMineralName"] as? String ?? stage1Hint
-                let score = parsedDict["confidenceScore"] as? Double ?? 0.88
-                let reasoning = parsedDict["reasoning"] as? String ?? "Multimodal visual confirmation based on surface geometry and luster."
-                let visualCues = parsedDict["visualCues"] as? [String] ?? []
-                let tests = parsedDict["suggestedTests"] as? [String] ?? []
-                let lookalike = parsedDict["lookalikeDisambiguation"] as? String
+                let name = parsedDict["pred_1"] as? String
+                    ?? parsedDict["topMineralName"] as? String
+                    ?? stage1Hint
+                let score = parsedDict["conf_1"] as? Double
+                    ?? parsedDict["confidenceScore"] as? Double
+                    ?? 0.88
+                let reasoning = parsedDict["reasoning"] as? String
+                    ?? "Multimodal visual confirmation based on surface geometry and luster."
+                let visualCues = parsedDict["visual_cues"] as? [String]
+                    ?? parsedDict["visualCues"] as? [String]
+                    ?? []
+                
+                var tests: [String] = []
+                if let separatingArray = parsedDict["separating_tests"] as? [[String: Any]] {
+                    for testDict in separatingArray {
+                        if let testName = testDict["test_name"] as? String,
+                           let rule = testDict["diagnostic_rule"] as? String {
+                            tests.append("\(testName): \(rule)")
+                        } else if let testName = testDict["test_name"] as? String {
+                            tests.append(testName)
+                        }
+                    }
+                } else if let simpleTests = parsedDict["suggestedTests"] as? [String] {
+                    tests = simpleTests
+                }
+                
+                let lookalike = parsedDict["lookalike_twin"] as? String
+                    ?? parsedDict["lookalikeDisambiguation"] as? String
                 
                 return Stage2Inference(
                     topMineralName: name,

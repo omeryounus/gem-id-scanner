@@ -349,24 +349,32 @@ def simulate_model_inference(label: str, tier: str, photo_id: str) -> Dict[str, 
         if roll < 0.82:
             pred_1 = label
             conf_1 = rng.uniform(0.86, 0.95)
+            conf_2 = rng.uniform(0.03, 0.08)
+            conf_3 = max(0.01, 1.0 - conf_1 - conf_2)
             pred_2 = twin
             pred_3 = lookalikes[1].title() if len(lookalikes) > 1 else "Quartz"
             twin_named = True
         elif roll < 0.95:
             pred_1 = twin
-            conf_1 = rng.uniform(0.60, 0.78)
+            conf_1 = rng.uniform(0.60, 0.76)
+            conf_2 = rng.uniform(0.18, 0.30)
+            conf_3 = max(0.01, 1.0 - conf_1 - conf_2)
             pred_2 = label
             pred_3 = lookalikes[1].title() if len(lookalikes) > 1 else "Quartz"
             twin_named = True
         elif roll < 0.98:
             pred_1 = twin
-            conf_1 = rng.uniform(0.55, 0.70)
+            conf_1 = rng.uniform(0.55, 0.68)
+            conf_2 = rng.uniform(0.20, 0.32)
+            conf_3 = max(0.01, 1.0 - conf_1 - conf_2)
             pred_2 = lookalikes[1].title() if len(lookalikes) > 1 else "Quartz"
             pred_3 = "Fluorite"
             twin_named = True
         else:
             pred_1 = "Unknown Silicate"
-            conf_1 = rng.uniform(0.40, 0.52)
+            conf_1 = rng.uniform(0.42, 0.52)
+            conf_2 = rng.uniform(0.30, 0.38)
+            conf_3 = max(0.01, 1.0 - conf_1 - conf_2)
             pred_2 = "Glass"
             pred_3 = "Chert"
             twin_named = False
@@ -375,24 +383,32 @@ def simulate_model_inference(label: str, tier: str, photo_id: str) -> Dict[str, 
         if roll < 0.65:
             pred_1 = label
             conf_1 = rng.uniform(0.72, 0.89)
+            conf_2 = rng.uniform(0.07, 0.18)
+            conf_3 = max(0.01, 1.0 - conf_1 - conf_2)
             pred_2 = twin
             pred_3 = lookalikes[1].title() if len(lookalikes) > 1 else "Quartz"
             twin_named = True
         elif roll < 0.88:
             pred_1 = twin
             conf_1 = rng.uniform(0.58, 0.75)
+            conf_2 = rng.uniform(0.18, 0.30)
+            conf_3 = max(0.01, 1.0 - conf_1 - conf_2)
             pred_2 = label
             pred_3 = "Jasper"
             twin_named = True
         elif roll < 0.95:
             pred_1 = twin
-            conf_1 = rng.uniform(0.50, 0.65)
+            conf_1 = rng.uniform(0.50, 0.64)
+            conf_2 = rng.uniform(0.24, 0.36)
+            conf_3 = max(0.01, 1.0 - conf_1 - conf_2)
             pred_2 = "Calcite"
             pred_3 = "Fluorite"
             twin_named = True
         else:
             pred_1 = "Slag Glass"
-            conf_1 = rng.uniform(0.42, 0.54)
+            conf_1 = rng.uniform(0.40, 0.52)
+            conf_2 = rng.uniform(0.30, 0.38)
+            conf_3 = max(0.01, 1.0 - conf_1 - conf_2)
             pred_2 = "Basalt"
             pred_3 = "Quartz"
             twin_named = False
@@ -401,14 +417,14 @@ def simulate_model_inference(label: str, tier: str, photo_id: str) -> Dict[str, 
         "pred_1": pred_1,
         "conf_1": round(conf_1, 3),
         "pred_2": pred_2,
-        "conf_2": round((1.0 - conf_1) * 0.6, 3),
+        "conf_2": round(conf_2, 3),
         "pred_3": pred_3,
-        "conf_3": round((1.0 - conf_1) * 0.4, 3),
+        "conf_3": round(conf_3, 3),
         "family": get_mineral_family(label),
         "identified_form": "tumbled" if is_tier_a else "rough",
         "lookalike_twin": twin,
         "twin_in_top3": twin_named,
-        "reasoning": f"Simulated gemological visual analysis of {label} showing typical luster and habit."
+        "reasoning": f"Simulated gemological visual analysis of {label} applying shortlist-then-separate ranking discipline and lookalike contrast."
     }
 
 
@@ -575,6 +591,41 @@ class AccuracyReport:
                 if top3_count == 0:
                     flagged_minerals.append(m)
 
+        # Candidate Confidence Spreads (conf_1 - conf_2 margin calculation)
+        def compute_spread_stats(rows_subset: List[Dict[str, Any]]) -> Dict[str, Any]:
+            if not rows_subset:
+                return {
+                    "count": 0,
+                    "mean_spread": 0.0,
+                    "min_spread": 0.0,
+                    "max_spread": 0.0,
+                    "decisive_count": 0,
+                    "moderate_count": 0,
+                    "tight_count": 0
+                }
+            s_list = [round(float(r.get("conf_1", 0.0) or 0.0) - float(r.get("conf_2", 0.0) or 0.0), 3) for r in rows_subset]
+            decisive = sum(1 for s in s_list if s >= 0.40)
+            moderate = sum(1 for s in s_list if 0.15 <= s < 0.40)
+            tight = sum(1 for s in s_list if s < 0.15)
+            return {
+                "count": len(s_list),
+                "mean_spread": round(sum(s_list) / len(s_list), 3),
+                "min_spread": min(s_list),
+                "max_spread": max(s_list),
+                "decisive_count": decisive,
+                "moderate_count": moderate,
+                "tight_count": tight
+            }
+
+        spread_stats = {
+            "overall": compute_spread_stats(self.rows),
+            "tier_a": compute_spread_stats(tier_a_rows),
+            "tier_b": compute_spread_stats(tier_b_rows),
+            "confirmed_band": compute_spread_stats(confirmed_rows),
+            "likely_band": compute_spread_stats(likely_rows),
+            "best_guesses_band": compute_spread_stats(best_guesses_rows)
+        }
+
         return {
             "tier_a": tier_a_metrics,
             "tier_b": tier_b_metrics,
@@ -584,12 +635,22 @@ class AccuracyReport:
                 "likely": band_likely,
                 "best_guesses": band_best_guesses
             },
+            "confidence_spread": spread_stats,
             "lookalike_twin_rate": twin_pct,
             "lookalike_twin_hits": twin_hits if lookalike_eligible else 0,
             "lookalike_eligible_count": len(lookalike_eligible),
             "confident_wrong_count": len(confident_wrong),
             "confident_wrong_samples": [
-                {"photo_id": r["photo_id"], "label": r["label"], "pred_1": r["pred_1"], "conf_1": r["conf_1"], "result": r["result"]}
+                {
+                    "photo_id": r["photo_id"],
+                    "label": r["label"],
+                    "pred_1": r["pred_1"],
+                    "conf_1": r["conf_1"],
+                    "pred_2": r.get("pred_2", ""),
+                    "conf_2": r.get("conf_2", "0.00"),
+                    "spread": round(float(r["conf_1"]) - float(r.get("conf_2", 0.0) or 0.0), 2),
+                    "result": r["result"]
+                }
                 for r in confident_wrong
             ],
             "error_taxonomy": error_causes,
@@ -653,6 +714,7 @@ class AccuracyReport:
         ta = self.stats["tier_a"]
         tb = self.stats["tier_b"]
         cal = self.stats["calibration"]
+        spr = self.stats["confidence_spread"]
         conf_wrong = self.stats["confident_wrong_count"]
         twin_rate = self.stats["lookalike_twin_rate"]
         errors = self.stats["error_taxonomy"]
@@ -701,7 +763,20 @@ class AccuracyReport:
 
 ---
 
-## 3. Misses Sorted by Error Taxonomy
+## 3. Candidate Confidence Spreads & Lookalike Margins (`conf_1 - conf_2`)
+
+| Calibration & Tier Cohort | Sample Count | Mean Margin (`conf_1 - conf_2`) | Target Margin Behavior | Spread Distribution (Decisive ≥0.40 / Moderate 0.15–0.39 / Tight <0.15) | Spread Status |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Confirmed Match Band (≥85%)** | {spr['confirmed_band']['count']} | **+{spr['confirmed_band']['mean_spread']:.2f}** | Decisive separation (≥ +0.60) | {spr['confirmed_band']['decisive_count']} decisive / {spr['confirmed_band']['moderate_count']} mod / {spr['confirmed_band']['tight_count']} tight | {'✅ Wide Margin' if spr['confirmed_band']['mean_spread'] >= 0.60 or spr['confirmed_band']['count'] == 0 else '⚠️ Narrow Spread'} |
+| **Likely Match Band (55%–84%)** | {spr['likely_band']['count']} | **+{spr['likely_band']['mean_spread']:.2f}** | Moderate separation (+0.15 to +0.55) | {spr['likely_band']['decisive_count']} decisive / {spr['likely_band']['moderate_count']} mod / {spr['likely_band']['tight_count']} tight | {'✅ Aligned Margin' if (0.15 <= spr['likely_band']['mean_spread'] <= 0.65 or spr['likely_band']['count'] == 0) else '⚠️ Skewed'} |
+| **Best Guesses Band (<55%)** | {spr['best_guesses_band']['count']} | **+{spr['best_guesses_band']['mean_spread']:.2f}** | Tight tie-break (< +0.15) | {spr['best_guesses_band']['decisive_count']} decisive / {spr['best_guesses_band']['moderate_count']} mod / {spr['best_guesses_band']['tight_count']} tight | {'✅ Close Tie-Break' if spr['best_guesses_band']['mean_spread'] < 0.20 or spr['best_guesses_band']['count'] == 0 else '⚠️ Wide Spread'} |
+| **Tier A (Clean Ceiling)** | {spr['tier_a']['count']} | **+{spr['tier_a']['mean_spread']:.2f}** | High diagnostic contrast | {spr['tier_a']['decisive_count']} decisive / {spr['tier_a']['moderate_count']} mod / {spr['tier_a']['tight_count']} tight | — |
+| **Tier B (Field Floor)** | {spr['tier_b']['count']} | **+{spr['tier_b']['mean_spread']:.2f}** | Resilient lookalike separation | {spr['tier_b']['decisive_count']} decisive / {spr['tier_b']['moderate_count']} mod / {spr['tier_b']['tight_count']} tight | — |
+| **Overall Dataset** | {spr['overall']['count']} | **+{spr['overall']['mean_spread']:.2f}** | Robust candidate ranking | {spr['overall']['decisive_count']} decisive / {spr['overall']['moderate_count']} mod / {spr['overall']['tight_count']} tight | — |
+
+---
+
+## 4. Misses Sorted by Error Taxonomy
 
 | Error Category | Count | Diagnostic Meaning | Prescribed Fix Action |
 | :--- | :--- | :--- | :--- |
@@ -713,7 +788,7 @@ class AccuracyReport:
 
 ---
 
-## 4. Per-Mineral Launch Rotation Status
+## 5. Per-Mineral Launch Rotation Status
 
 """
         if self.stats["flagged_minerals"]:
@@ -763,9 +838,11 @@ def main():
     )
     parser.add_argument(
         "--prompt",
+        "--prompt-file",
+        dest="prompt",
         type=str,
-        default="accuracy-testing/prompts/run-01-prompt.txt",
-        help="Path to the frozen Gemini Vision prompt file."
+        default="accuracy-testing/prompts/run-02-prompt.txt",
+        help="Path to the frozen Gemini Vision prompt file (defaults to run-02-prompt.txt)."
     )
     parser.add_argument(
         "--api-key",
@@ -788,7 +865,7 @@ def main():
     parser.add_argument(
         "--run-id",
         type=str,
-        default="run-01",
+        default="run-02",
         help="Identifier for this test run (e.g. run-01, run-02)."
     )
     parser.add_argument(
@@ -842,6 +919,7 @@ def main():
     print(f"[*] Loaded {len(rows)} test rows from {sheet_path}")
     print(f"[*] Mode: {'Score Only' if args.score_only else ('Simulated Mock' if args.mock else f'Live API ({args.model})')}")
     print(f"[*] Target Run ID: {args.run_id}")
+    print(f"[*] Prompt File: {args.prompt}")
 
     # Process Inference
     tier_a_pass_cache: Dict[str, bool] = {}
@@ -862,6 +940,8 @@ def main():
         pred_2 = row.get("pred_2", "")
         pred_3 = row.get("pred_3", "")
         conf_1_raw = row.get("conf_1", "")
+        conf_2_raw = row.get("conf_2", "")
+        conf_3_raw = row.get("conf_3", "")
         twin_field = ""
 
         if not args.score_only:
@@ -871,6 +951,8 @@ def main():
                 pred_2 = sim_resp["pred_2"]
                 pred_3 = sim_resp["pred_3"]
                 conf_1_raw = str(sim_resp["conf_1"])
+                conf_2_raw = str(sim_resp.get("conf_2", 0.0))
+                conf_3_raw = str(sim_resp.get("conf_3", 0.0))
                 twin_field = sim_resp.get("lookalike_twin", "")
             else:
                 # Find matching photo file
@@ -879,6 +961,8 @@ def main():
                     print(f"[!] Photo {photo_id} not found in {photos_dir}. Marking as timeout/miss.")
                     pred_1, pred_2, pred_3 = "Not Tested", "", ""
                     conf_1_raw = "0.00"
+                    conf_2_raw = "0.00"
+                    conf_3_raw = "0.00"
                     row["notes"] = (row.get("notes", "") + " [Photo Missing]").strip()
                 else:
                     img_path = img_candidates[0]
@@ -889,19 +973,25 @@ def main():
                             api_key=args.api_key,
                             model=args.model
                         )
-                        pred_1 = api_resp.get("pred_1", "")
+                        pred_1 = api_resp.get("pred_1") or api_resp.get("topMineralName") or ""
                         pred_2 = api_resp.get("pred_2", "")
                         pred_3 = api_resp.get("pred_3", "")
-                        conf_1_raw = str(api_resp.get("conf_1", 0.0))
-                        twin_field = api_resp.get("lookalike_twin", "")
+                        conf_1_raw = str(api_resp.get("conf_1") if "conf_1" in api_resp else api_resp.get("confidenceScore", 0.0))
+                        conf_2_raw = str(api_resp.get("conf_2", 0.0))
+                        conf_3_raw = str(api_resp.get("conf_3", 0.0))
+                        twin_field = api_resp.get("lookalike_twin") or api_resp.get("lookalikeDisambiguation") or ""
                         time.sleep(0.2)  # Mild pacing for rate limits
                     except Exception as ex:
                         print(f"[-] Error calling Gemini API for {photo_id}: {ex}")
                         pred_1, pred_2, pred_3 = "API Error", "", ""
                         conf_1_raw = "0.00"
+                        conf_2_raw = "0.00"
+                        conf_3_raw = "0.00"
                         row["notes"] = (row.get("notes", "") + f" [Error: {ex}]").strip()
 
         conf_1 = float(conf_1_raw) if conf_1_raw else 0.0
+        conf_2 = float(conf_2_raw) if conf_2_raw else 0.0
+        conf_3 = float(conf_3_raw) if conf_3_raw else 0.0
 
         # Check if Tier A counterpart passed for photo problem attribution
         tier_a_passed = tier_a_pass_cache.get(specimen_id, True)
@@ -921,19 +1011,21 @@ def main():
             tier_a_pass_cache[specimen_id] = (result == "top1")
 
         row["pred_1"] = pred_1
-        row["pred_2"] = pred_2
-        row["pred_3"] = pred_3
         row["conf_1"] = f"{conf_1:.2f}"
+        row["pred_2"] = pred_2
+        row["conf_2"] = f"{conf_2:.2f}"
+        row["pred_3"] = pred_3
+        row["conf_3"] = f"{conf_3:.2f}"
         row["result"] = result
         row["twin_named"] = twin_named
         row["error_cause"] = error_cause
         scored_rows.append(row)
 
-    # Output Scored CSV
+    # Output Scored CSV (with conf_2 and conf_3 columns)
     csv_out_path = output_dir / f"scored_sheet_{args.run_id}.csv"
     fieldnames = [
         "photo_id", "specimen_id", "label", "label_basis", "form", "source_rights",
-        "pred_1", "pred_2", "pred_3", "conf_1", "result", "twin_named", "error_cause", "notes"
+        "pred_1", "conf_1", "pred_2", "conf_2", "pred_3", "conf_3", "result", "twin_named", "error_cause", "notes"
     ]
     with open(csv_out_path, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames, extrasaction="ignore")
@@ -966,6 +1058,7 @@ def main():
     print(f" Confirmed Band Actual: {reporter.stats['calibration']['confirmed']['top1_accuracy']}% (Target: ≥85%)")
     print(f" Lookalike Twin Rate:  {reporter.stats['lookalike_twin_rate']}% (Target: ≥80%)")
     print(f" Confident Wrong Ans:  {reporter.stats['confident_wrong_count']} (Target: ≤2)")
+    print(f" Mean Candidate Spread: +{reporter.stats['confidence_spread']['overall']['mean_spread']:.2f} (Tier A: +{reporter.stats['confidence_spread']['tier_a']['mean_spread']:.2f}, Tier B: +{reporter.stats['confidence_spread']['tier_b']['mean_spread']:.2f})")
     print("=" * 60 + "\n")
 
 
