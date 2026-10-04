@@ -5,10 +5,12 @@ public struct AnalyzingView: View {
     public let image: UIImage?
     public let onComplete: (IdentificationResult) -> Void
     
+    @Environment(\.dismiss) private var dismiss
     @StateObject private var coordinator = IdentificationCoordinator.shared
     @State private var scanLaserOffset: CGFloat = -140
     @State private var radarRotation: Double = 0
     @State private var pulseScale: CGFloat = 1.0
+    @State private var analysisError: String?
     
     public init(image: UIImage?, onComplete: @escaping (IdentificationResult) -> Void) {
         self.image = image
@@ -85,8 +87,8 @@ public struct AnalyzingView: View {
                     
                     StepRowView(
                         icon: "cpu.fill",
-                        title: "2. Stage 1: On-Device CoreML (<100ms)",
-                        subtitle: "Local neural classification on 60-mineral catalog",
+                        title: "2. Stage 1: On-Device Optical Analyzer (<100ms)",
+                        subtitle: "Color signature shortlist on 60-mineral catalog",
                         isCurrent: coordinator.analysisStep == .runningStage1OnDevice,
                         isDone: coordinator.analysisStep == .runningStage2CloudOpinion || coordinator.analysisStep == .mergingConfidence || coordinator.analysisStep == .complete
                     )
@@ -111,8 +113,59 @@ public struct AnalyzingView: View {
                 
                 Spacer()
             }
+            
+            // Error Card Overlay if Analysis Fails
+            if let error = analysisError {
+                Color.black.opacity(0.7).ignoresSafeArea()
+                VStack(spacing: 16) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.system(size: 38))
+                        .foregroundColor(.amberGold)
+                    Text("Identification Interrupted")
+                        .font(.system(size: 18, weight: .bold, design: .rounded))
+                        .foregroundColor(.white)
+                    Text(error)
+                        .font(.system(size: 13))
+                        .foregroundColor(.white.opacity(0.7))
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 16)
+                    HStack(spacing: 14) {
+                        Button("Cancel") { dismiss() }
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(.white.opacity(0.8))
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 10)
+                            .background(Color.white.opacity(0.1))
+                            .clipShape(Capsule())
+                        Button("Retry") {
+                            analysisError = nil
+                            runIdentification()
+                        }
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(.black)
+                        .padding(.horizontal, 24)
+                        .padding(.vertical, 10)
+                        .background(Color.cyan)
+                        .clipShape(Capsule())
+                    }
+                    .padding(.top, 4)
+                }
+                .padding(24)
+                .background(Color(red: 0.12, green: 0.13, blue: 0.18))
+                .clipShape(RoundedRectangle(cornerRadius: 20))
+                .padding(28)
+            }
         }
         .navigationBarBackButtonHidden(true)
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button(action: { dismiss() }) {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 22))
+                        .foregroundColor(.white.opacity(0.6))
+                }
+            }
+        }
         .onAppear {
             // Start scan animations
             withAnimation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true)) {
@@ -122,14 +175,22 @@ public struct AnalyzingView: View {
                 pulseScale = 1.35
             }
             
-            // Execute identification pipeline
-            Task {
-                if let img = image {
-                    if let result = try? await coordinator.identify(image: img) {
-                        try? await Task.sleep(nanoseconds: 200_000_000)
-                        onComplete(result)
-                    }
-                }
+            runIdentification()
+        }
+    }
+    
+    private func runIdentification() {
+        Task {
+            guard let img = image else {
+                analysisError = "No specimen photo was provided."
+                return
+            }
+            do {
+                let result = try await coordinator.identify(image: img)
+                try? await Task.sleep(nanoseconds: 200_000_000)
+                onComplete(result)
+            } catch {
+                self.analysisError = error.localizedDescription
             }
         }
     }

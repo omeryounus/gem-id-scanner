@@ -16,13 +16,45 @@ public final class MineralDatabase: @unchecked Sendable {
             dict[mineral.name.lowercased()] = mineral
             for alt in mineral.alternativeNames {
                 dict[alt.lowercased()] = mineral
+                if let parenIndex = alt.firstIndex(of: "(") {
+                    let base = String(alt[..<parenIndex]).trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+                    if !base.isEmpty {
+                        dict[base] = mineral
+                    }
+                }
             }
+        }
+        // Aliases for lookalikes and synthetic trade names
+        if let labradorite = dict["labradorite"] {
+            dict["rainbow moonstone"] = labradorite
+            dict["white labradorite"] = labradorite
+        }
+        if let opal = dict["opal"] {
+            dict["opalite"] = opal
+            dict["synthetic opal"] = opal
+        }
+        if let quartz = dict["clear quartz"] {
+            dict["glass"] = quartz
+            dict["slag"] = quartz
+        }
+        if let amethyst = dict["amethyst"] {
+            dict["heat-treated amethyst"] = amethyst
+        }
+        if let howlite = dict["howlite"] {
+            dict["dyed howlite"] = howlite
         }
         self.indexByName = dict
     }
     
     public func find(byName name: String) -> Mineral? {
-        indexByName[name.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()]
+        let clean = name.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        if let found = indexByName[clean] {
+            return found
+        }
+        // Substring fallback
+        return allMinerals.first { m in
+            clean.contains(m.name.lowercased()) || m.name.lowercased().contains(clean)
+        }
     }
     
     public func minerals(in category: MineralCategory) -> [Mineral] {
@@ -447,7 +479,7 @@ public final class MineralDatabase: @unchecked Sendable {
                     hardnessComparison: "Both Mohs 7.0"
                 ),
                 Lookalike(
-                    mineralName: "MookReporting Siltstone / Mudstone",
+                    mineralName: "Mookaite",
                     visualDifference: "Mudstone is much softer and has a clay-like earthy odor when breathed upon.",
                     separatingTest: "Hardness test: Mudstone scratches at Mohs 2 - 3; Jasper is Mohs 6.5 - 7.",
                     hardnessComparison: "Jasper 7.0 vs Mudstone 2.5"

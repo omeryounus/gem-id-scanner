@@ -18,7 +18,6 @@ public struct ResultView: View {
     @State private var showShareSheet = false
     @State private var showPaywallSheet = false
     @State private var showCorrectionSheet = false
-    @State private var showSecondAngleBanner = false
     @State private var shareCardImage: UIImage?
     @State private var selectedShareRatio: ShareCardAspectRatio = .story9x16
     @State private var isSavedToCollection = false
@@ -344,24 +343,36 @@ public struct ResultView: View {
         }
         
         let photoData = scannedImage?.jpegData(compressionQuality: 0.8)
-        let weight = Double(weightString)
+        let parsedWeight: Double? = {
+            if let w = Double(weightString), w > 0, w < 100_000 {
+                return w
+            }
+            return nil
+        }()
+        let sanitizedNotes = String(userNotes.prefix(2000)).trimmingCharacters(in: .whitespacesAndNewlines)
+        let sanitizedOrigin = originSource.isEmpty ? nil : String(originSource.prefix(200)).trimmingCharacters(in: .whitespacesAndNewlines)
+        
         let record = SpecimenRecord(
             photoData: photoData,
             mineralName: result.topCandidate.mineralName,
             confidence: result.mergedConfidence,
             confidenceBand: result.confidenceBand,
-            notes: userNotes,
-            weightGrams: weight,
-            originSource: originSource.isEmpty ? nil : originSource,
+            notes: sanitizedNotes,
+            weightGrams: parsedWeight,
+            originSource: sanitizedOrigin,
             form: selectedForm,
             isFavorite: false,
-            userConfirmed: true
+            userConfirmed: false
         )
         modelContext.insert(record)
-        try? modelContext.save()
-        withAnimation {
-            isSavedToCollection = true
-            showSaveSuccessToast = true
+        do {
+            try modelContext.save()
+            withAnimation {
+                isSavedToCollection = true
+                showSaveSuccessToast = true
+            }
+        } catch {
+            print("Failed to save specimen to collection: \(error.localizedDescription)")
         }
     }
 }

@@ -24,6 +24,8 @@ public struct SettingsView: View {
     @State private var showZipExportSheet = false
     @State private var syncToastMessage: String?
     @State private var cacheClearedToast = false
+    @State private var geminiAPIKey = GeminiVisionService.shared.customUserKey ?? ""
+    @State private var geminiKeyMessage: String?
     
     public init() {}
     
@@ -113,6 +115,30 @@ public struct SettingsView: View {
                             }
                             .padding(.vertical, 6)
                         }
+
+                        HStack {
+                            Button(action: {
+                                allowance.resetAllowances()
+                            }) {
+                                Label("Reset Daily Scans (5/5)", systemImage: "arrow.counterclockwise.circle")
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .foregroundColor(.amberGold)
+                            }
+                            .buttonStyle(.plain)
+                            
+                            Spacer()
+                            
+                            Button(action: {
+                                storeKit.isProPurchased.toggle()
+                                allowance.updateProStatus(isPro: storeKit.isProPurchased)
+                            }) {
+                                Label(storeKit.isProPurchased ? "Revert to Free" : "Unlock Pro Mode", systemImage: storeKit.isProPurchased ? "lock.open" : "crown")
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .foregroundColor(.cyan)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                        .padding(.vertical, 2)
                     } header: {
                         Text("Membership & Allowance")
                     }
@@ -252,7 +278,7 @@ public struct SettingsView: View {
                             VStack(alignment: .leading, spacing: 2) {
                                 Label("High-Precision Multimodal AI", systemImage: "sparkles")
                                     .foregroundColor(.white)
-                                Text("Combines on-device vision with Gemini Vision 2.5 Flash for nuanced crystal classification.")
+                                Text("Uses Gemini \(GeminiVisionService.modelName) for image analysis when an API key is configured.")
                                     .font(.system(size: 11))
                                     .foregroundColor(.white.opacity(0.6))
                             }
@@ -261,6 +287,84 @@ public struct SettingsView: View {
                     }
                     .listRowBackground(Color.white.opacity(0.04))
                     
+                    // MARK: - Gemini Vision Configuration
+                    Section("Gemini Vision") {
+                        if GeminiVisionService.shared.hasCustomUserKey {
+                            HStack(spacing: 6) {
+                                Image(systemName: "checkmark.seal.fill")
+                                    .foregroundColor(.emeraldGreen)
+                                Text("Custom API key active on this device.")
+                                    .font(.system(size: 11, weight: .medium))
+                                    .foregroundColor(.emeraldGreen)
+                            }
+                        } else if GeminiVisionService.shared.bundledKey != nil {
+                            HStack(spacing: 6) {
+                                Image(systemName: "checkmark.shield.fill")
+                                    .foregroundColor(.cyan)
+                                Text("Pre-configured build key active (\(GeminiVisionService.modelName)).")
+                                    .font(.system(size: 11, weight: .medium))
+                                    .foregroundColor(.cyan)
+                            }
+                        } else {
+                            HStack(spacing: 6) {
+                                Image(systemName: "exclamationmark.triangle.fill")
+                                    .foregroundColor(.amberGold)
+                                Text("No API key configured. Scans will use color shortlist only.")
+                                    .font(.system(size: 11, weight: .medium))
+                                    .foregroundColor(.amberGold)
+                            }
+                        }
+
+                        SecureField(GeminiVisionService.shared.bundledKey != nil ? "Enter custom key to override" : "Gemini API key", text: $geminiAPIKey)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                            .textContentType(.password)
+                            .foregroundColor(.white)
+
+                        HStack {
+                            Button("Save API Key") {
+                                let trimmedKey = geminiAPIKey.trimmingCharacters(in: .whitespacesAndNewlines)
+                                guard !trimmedKey.isEmpty else {
+                                    geminiKeyMessage = "Enter an API key first."
+                                    return
+                                }
+
+                                GeminiVisionService.shared.apiKey = trimmedKey
+                                if GeminiVisionService.shared.hasCustomUserKey {
+                                    geminiAPIKey = trimmedKey
+                                    geminiKeyMessage = "Custom API key saved securely on this device."
+                                } else {
+                                    geminiKeyMessage = "Could not save the API key to Keychain."
+                                }
+                            }
+                            .foregroundColor(.cyan)
+
+                            Spacer()
+
+                            if GeminiVisionService.shared.hasCustomUserKey {
+                                Button(GeminiVisionService.shared.bundledKey != nil ? "Reset to Default" : "Remove") {
+                                    GeminiVisionService.shared.apiKey = nil
+                                    geminiAPIKey = ""
+                                    geminiKeyMessage = GeminiVisionService.shared.bundledKey != nil
+                                        ? "Reverted to pre-configured build key."
+                                        : "Custom API key removed. Scans will use the color shortlist only."
+                                }
+                                .foregroundColor(.coralRed)
+                            }
+                        }
+
+                        if let geminiKeyMessage {
+                            Text(geminiKeyMessage)
+                                .font(.system(size: 11))
+                                .foregroundColor(.white.opacity(0.65))
+                        }
+
+                        Text("Scanned images are sent to Google for Gemini Vision multimodal analysis. When no key is active, scans revert to on-device color suggestions.")
+                            .font(.system(size: 11))
+                            .foregroundColor(.white.opacity(0.6))
+                    }
+                    .listRowBackground(Color.white.opacity(0.04))
+
                     // MARK: - Collection Storage & Backup
                     Section("Data & Storage") {
                         HStack {
@@ -290,7 +394,7 @@ public struct SettingsView: View {
                             Text("Mineral Database")
                                 .foregroundColor(.white)
                             Spacer()
-                            Text("v2026.4 (500+ Species)")
+                            Text("v2026.4 (60 Curated Species)")
                                 .font(.system(size: 12, design: .monospaced))
                                 .foregroundColor(.white.opacity(0.6))
                         }
@@ -299,7 +403,7 @@ public struct SettingsView: View {
                             Text("Classification Core")
                                 .foregroundColor(.white)
                             Spacer()
-                            Text("CoreML 1.4 + Gemini 2.5")
+                            Text("Color shortlist + Gemini \(GeminiVisionService.modelName)")
                                 .font(.system(size: 12, design: .monospaced))
                                 .foregroundColor(.white.opacity(0.6))
                         }
@@ -308,7 +412,7 @@ public struct SettingsView: View {
                             Text("App Version")
                                 .foregroundColor(.white)
                             Spacer()
-                            Text("1.0.0 (Build 2026.10)")
+                            Text("\((Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String) ?? "1.0.0") (Build \((Bundle.main.infoDictionary?["CFBundleVersion"] as? String) ?? "3"))")
                                 .font(.system(size: 12, design: .monospaced))
                                 .foregroundColor(.white.opacity(0.6))
                         }
@@ -435,65 +539,4 @@ public struct SettingsView: View {
             self.showExportSheet = true
         }
     }
-}
-
-private struct LegalDocumentView: View {
-    let title: String
-    let content: String
-    @Environment(\.dismiss) private var dismiss
-    
-    var body: some View {
-        ScrollView {
-            Text(content)
-                .font(.system(size: 14))
-                .foregroundColor(.white.opacity(0.85))
-                .lineSpacing(5)
-                .padding(20)
-        }
-        .background(Color(red: 0.07, green: 0.08, blue: 0.11).ignoresSafeArea())
-        .navigationTitle(title)
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .cancellationAction) {
-                Button("Done") { dismiss() }
-                    .foregroundColor(.amberGold)
-            }
-        }
-    }
-}
-
-private enum LegalDocumentContent {
-    static let terms = """
-    Gem ID Scanner Terms of Service
-    
-    1. Introduction
-    Welcome to Gem ID Scanner. By using our application, you agree to these Terms of Service. Please read them carefully.
-    
-    2. Educational & Informational Purpose
-    Gem ID Scanner provides visual and multimodal AI mineral identification suggestions for educational, recreational, and rockhounding purposes. Specimen identifications should not be relied upon as certified appraisals or legal valuations for commercial jewelry transactions.
-    
-    3. Subscription Billing & Cancellations
-    - Subscriptions automatically renew unless auto-renew is turned off at least 24 hours before the end of the current period.
-    - Payment is charged to your Apple ID account at confirmation of purchase.
-    - You can manage and cancel your subscriptions anytime in your Apple ID Account Settings after purchase.
-    
-    4. Contact & Support
-    For assistance or inquiries, please contact support@gemidscanner.app.
-    """
-    
-    static let privacy = """
-    Gem ID Scanner Privacy Policy
-    
-    1. Privacy First Architecture
-    We value your privacy. Gem ID Scanner processes initial visual analyses on-device using CoreML whenever possible.
-    
-    2. Cloud Vision Processing
-    When high-confidence cloud identification is active, specimen images are transmitted securely over TLS to Gemini Vision API for inference. Images are not retained or used for user profiling.
-    
-    3. Anonymized Improvement Feedback
-    If you opt into Model Improvement, submitted mineral corrections and anonymous diagnostic metadata are used solely to retrain and refine our mineralogy classification dataset. No personally identifiable information (PII) is attached.
-    
-    4. Local SwiftData Storage
-    Your saved specimen vault, collection notes, photos, and favorites remain stored locally on your device in your private SwiftData container.
-    """
 }

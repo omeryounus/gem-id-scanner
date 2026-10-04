@@ -55,6 +55,7 @@ jobs:
           APPSTORE_API_KEY_BASE64: ${{ secrets.APPSTORE_API_KEY_BASE64 }}
           BUILD_CERTIFICATE_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
           P12_PASSWORD: ${{ secrets.P12_PASSWORD }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           missing=0
           for v in APPSTORE_API_KEY_ID APPSTORE_API_ISSUER_ID APPSTORE_API_KEY_BASE64 BUILD_CERTIFICATE_BASE64 P12_PASSWORD; do
@@ -65,6 +66,11 @@ jobs:
               echo "✓ Secret present: $v"
             fi
           done
+          if [ -z "$GEMINI_API_KEY" ]; then
+            echo "::warning::GEMINI_API_KEY secret is not set. Cloud vision will rely on user-entered keys or offline color shortlists."
+          else
+            echo "✓ Secret present: GEMINI_API_KEY"
+          fi
           exit $missing
 
       - name: Install Apple Distribution Certificate
@@ -174,6 +180,7 @@ jobs:
         env:
           APPLE_TEAM_ID: ${{ env.APPLE_TEAM_ID }}
           APP_IDENTIFIER: ${{ env.APP_IDENTIFIER }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           set -euo pipefail
           BUILD_NUMBER="${{ github.run_number }}"
@@ -207,6 +214,7 @@ jobs:
             PROVISIONING_PROFILE_SPECIFIER="$PROFILE_NAME" \
             CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
             MARKETING_VERSION="$MARKETING_VERSION" \
+            GEMINI_API_KEY="$GEMINI_API_KEY" \
             clean archive
 
           xcodebuild -exportArchive \

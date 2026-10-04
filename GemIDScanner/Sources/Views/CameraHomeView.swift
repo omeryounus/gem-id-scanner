@@ -151,6 +151,7 @@ public struct CameraHomeView: View {
                                     let image = try await camera.capturePhoto()
                                     processImageScan(image: image)
                                 } catch {
+                                    #if targetEnvironment(simulator)
                                     // Fallback for simulator: mock image scan
                                     let renderer = UIGraphicsImageRenderer(size: CGSize(width: 400, height: 400))
                                     let dummy = renderer.image { ctx in
@@ -158,6 +159,9 @@ public struct CameraHomeView: View {
                                         ctx.fill(CGRect(x: 0, y: 0, width: 400, height: 400))
                                     }
                                     processImageScan(image: dummy)
+                                    #else
+                                    camera.errorMessage = "Failed to capture photo: \(error.localizedDescription)"
+                                    #endif
                                 }
                             }
                         }) {
@@ -191,6 +195,7 @@ public struct CameraHomeView: View {
             }
             .navigationDestination(isPresented: $showAnalyzing) {
                 AnalyzingView(image: activeCapturedImage) { result in
+                    allowance.recordScan()
                     self.activeResult = result
                     self.showAnalyzing = false
                     if result.confidenceBand == .bestGuesses {
@@ -222,7 +227,6 @@ public struct CameraHomeView: View {
             return
         }
         
-        allowance.recordScan()
         self.activeCapturedImage = image
         self.showAnalyzing = true
     }

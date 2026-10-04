@@ -17,7 +17,7 @@
 	<key>provisioningProfiles</key>
 	<dict>
 		<key>com.gemidscanner.app</key>
-		<string>YOUR_PROVISIONING_PROFILE_NAME</string>
+		<string>com.gemidscanner.app AppStore</string>
 	</dict>
 </dict>
 </plist>

@@ -3,7 +3,7 @@ import UIKit
 import SwiftUI
 
 /// Orchestrates the two-stage visual identification pipeline:
-/// - Stage 1: Fast on-device CoreML / Neural Engine classification (<100ms)
+/// - Stage 1: Fast on-device color-based shortlist
 /// - Stage 2: Cloud / Multimodal Gemini Vision second-opinion verification
 ///
 /// Merge Rules:
@@ -34,8 +34,8 @@ public final class IdentificationCoordinator: ObservableObject {
             switch self {
             case .idle: return "Ready"
             case .assessingQuality: return "Evaluating image lighting & sharpness..."
-            case .runningStage1OnDevice: return "Running Stage 1 On-Device Neural Classifier (<100ms)..."
-            case .runningStage2CloudOpinion: return "Stage 2: Consulting Gemini Vision second opinion..."
+            case .runningStage1OnDevice: return "Building an on-device color shortlist..."
+            case .runningStage2CloudOpinion: return "Consulting Gemini Vision..."
             case .mergingConfidence: return "Merging two-stage predictions & calculating confidence..."
             case .complete: return "Identification Complete"
             }
@@ -57,16 +57,15 @@ public final class IdentificationCoordinator: ObservableObject {
     }
     
     /// Executes the complete end-to-end identification workflow.
-    /// Executes the complete end-to-end identification workflow.
     public func identify(image: UIImage) async throws -> IdentificationResult {
         isAnalyzing = true
         errorMessage = nil
         
         // 1. Quality Check
         analysisStep = .assessingQuality
-        let qualityAssessment = CameraService().evaluateImageQuality(image: image)
+        let qualityAssessment = CameraService.evaluateImageQuality(image: image)
         
-        // 2. Stage 1 On-Device CoreML (<100ms)
+        // 2. Stage 1 On-Device Optical Analyzer (<100ms)
         analysisStep = .runningStage1OnDevice
         let stage1 = try await coreMLService.classify(image: image)
         
@@ -82,7 +81,9 @@ public final class IdentificationCoordinator: ObservableObject {
                     try await Task.sleep(nanoseconds: 6_000_000_000)
                     throw NSError(domain: "IdentificationCoordinator", code: 408, userInfo: [NSLocalizedDescriptionKey: "Stage 2 cloud opinion timed out after 6 seconds."])
                 }
-                let first = try await group.next()!
+                guard let first = try await group.next() else {
+                    throw NSError(domain: "IdentificationCoordinator", code: 500, userInfo: [NSLocalizedDescriptionKey: "No result returned from Stage 2 analysis."])
+                }
                 group.cancelAll()
                 return first
             }
@@ -91,9 +92,9 @@ public final class IdentificationCoordinator: ObservableObject {
             let fallbackMin = database.find(byName: stage1.topMineralName)
             stage2 = Stage2Inference(
                 topMineralName: stage1.topMineralName,
-                score: min(stage1.score, 0.84),
-                reasoning: "On-device neural profile analyzed. Stage 2 completed with offline heuristics.",
-                visualCuesObserved: ["Optical habit matches \(fallbackMin?.crystalSystem ?? "crystal standard")"],
+                score: min(stage1.score, 0.35),
+                reasoning: "Gemini vision analysis was unavailable. This is only an on-device color shortlist; verify with physical tests.",
+                visualCuesObserved: ["Central image color compared with the catalog color range"],
                 suggestedTests: fallbackMin?.ruleOutTests.prefix(2).map { String($0) } ?? ["Mohs Hardness Scratch Test"],
                 lookalikeDisambiguation: fallbackMin?.topLookalikes.first.map { "Distinguish from \($0.mineralName): \($0.separatingTest)" }
             )

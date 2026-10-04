@@ -5,7 +5,7 @@ import Combine
 
 public enum CameraQualityWarning: String, CaseIterable, Sendable {
     case tooDark = "Lighting is too dark. Turn on torch or move to better light."
-    case blurry = "Move closer - fill the frame"
+    case blurry = "Specimen is blurry. Hold still to focus."
     case overexposed = "Too bright - reduce glare"
     case tooFar = "Move closer - fill the frame"
 }
@@ -166,6 +166,15 @@ public final class CameraService: NSObject, ObservableObject {
     
     /// Evaluates sharpness (variance of Laplacian) and lighting/glare of a captured UIImage
     public func evaluateImageQuality(image: UIImage) -> ImageQualityAssessment {
+        let assessment = Self.evaluateImageQuality(image: image)
+        self.currentQualityAssessment = assessment
+        if UserDefaults.standard.bool(forKey: "GemIDScanner_AutoTorch") && assessment.brightnessScore < 0.20 && !isTorchOn {
+            toggleTorch()
+        }
+        return assessment
+    }
+    
+    public nonisolated static func evaluateImageQuality(image: UIImage) -> ImageQualityAssessment {
         guard let cgImage = image.cgImage else {
             return ImageQualityAssessment(isAcceptable: true, warnings: [], brightnessScore: 0.5, sharpnessScore: 0.5)
         }
@@ -252,34 +261,41 @@ public final class CameraService: NSObject, ObservableObject {
             warnings.append(.blurry)
         }
         
-        let assessment = ImageQualityAssessment(
+        return ImageQualityAssessment(
             isAcceptable: warnings.isEmpty,
             warnings: warnings,
             brightnessScore: avgBrightness,
             sharpnessScore: sharpnessScore
         )
-        self.currentQualityAssessment = assessment
-        return assessment
     }
 }
 
 extension CameraService: AVCapturePhotoCaptureDelegate {
-    public func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingPhoto photo: AVCapturePhoto, error: Error?) {
+    nonisolated public func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingPhoto photo: AVCapturePhoto, error: Error?) {
+        let resultImage: UIImage?
+        let captureError: Error?
+        
         if let error = error {
-            captureContinuation?.resume(throwing: error)
-            captureContinuation = nil
-            return
+            captureError = error
+            resultImage = nil
+        } else if let data = photo.fileDataRepresentation(), let image = UIImage(data: data) {
+            resultImage = image
+            captureError = nil
+        } else {
+            resultImage = nil
+            captureError = NSError(domain: "CameraService", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to convert photo data to UIImage"])
         }
         
-        guard let data = photo.fileDataRepresentation(), let image = UIImage(data: data) else {
-            captureContinuation?.resume(throwing: NSError(domain: "CameraService", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to convert photo data to UIImage"]))
-            captureContinuation = nil
-            return
+        Task { @MainActor in
+            if let error = captureError {
+                self.captureContinuation?.resume(throwing: error)
+                self.captureContinuation = nil
+            } else if let image = resultImage {
+                self.capturedImage = image
+                _ = self.evaluateImageQuality(image: image)
+                self.captureContinuation?.resume(returning: image)
+                self.captureContinuation = nil
+            }
         }
-        
-        self.capturedImage = image
-        _ = evaluateImageQuality(image: image)
-        captureContinuation?.resume(returning: image)
-        captureContinuation = nil
     }
 }

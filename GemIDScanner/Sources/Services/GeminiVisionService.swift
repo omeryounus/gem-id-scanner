@@ -1,5 +1,6 @@
 import Foundation
 import UIKit
+import Security
 
 #if canImport(CryptoKit)
 import CryptoKit
@@ -12,10 +13,11 @@ import CryptoKit
 /// Features resilient timeout management, offline fallback, and custom API key configuration.
 public final class GeminiVisionService: @unchecked Sendable {
     public static let shared = GeminiVisionService()
+    public static let modelName = "gemini-2.5-flash"
     
     public static let promptTemplate: String = """
     You are an expert gemologist, mineralogist, and crystallographer. Your task is to perform rigorous, non-destructive optical identification of the mineral, gemstone, or rock specimen shown in the provided photograph(s).
-    Stage 1 on-device classifier shortlisted: "{STAGE_1_HINT}".
+    Stage 1 on-device color shortlist: "{STAGE_1_HINT}". Treat this only as a hint, not as a visual classification.
 
     ## 1. OPTICAL & MORPHOLOGICAL ATTRIBUTE EXAMINATION
     Carefully evaluate visible features:
@@ -92,41 +94,111 @@ public final class GeminiVisionService: @unchecked Sendable {
         #endif
     }
     
-    private let apiKeyDefaultsKey = "GemIDScanner_GeminiAPIKey"
+    private let apiKeyAccount = "GemIDScanner_GeminiAPIKey"
     private let session: URLSession
     
     public init(session: URLSession = .shared) {
         self.session = session
     }
     
-    public var apiKey: String? {
-        get {
-            UserDefaults.standard.string(forKey: apiKeyDefaultsKey)
-        }
-        set {
-            if let value = newValue, !value.isEmpty {
-                UserDefaults.standard.set(value, forKey: apiKeyDefaultsKey)
-            } else {
-                UserDefaults.standard.removeObject(forKey: apiKeyDefaultsKey)
+    /// True if the user manually saved a custom key in Keychain.
+    public var hasCustomUserKey: Bool {
+        customUserKey != nil
+    }
+
+    /// User-supplied key stored in Keychain on this device.
+    public var customUserKey: String? {
+        var query = keychainQuery
+        query[kSecReturnData as String] = true
+        query[kSecMatchLimit as String] = kSecMatchLimitOne
+        var result: CFTypeRef?
+        guard SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess,
+              let data = result as? Data,
+              let str = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !str.isEmpty else { return nil }
+        return str
+    }
+
+    /// Default bundled key from Info.plist (build injection), GeminiConfig.plist, or environment.
+    public var bundledKey: String? {
+        // 1. Info.plist injected at build time (e.g. INFOPLIST_KEY_GEMINI_API_KEY)
+        if let infoKey = Bundle.main.object(forInfoDictionaryKey: "GEMINI_API_KEY") as? String {
+            let trimmed = infoKey.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !trimmed.isEmpty && !trimmed.hasPrefix("$(") {
+                return trimmed
             }
         }
+
+        // 2. Embedded GeminiConfig.plist in the app bundle
+        if let path = Bundle.main.path(forResource: "GeminiConfig", ofType: "plist"),
+           let dict = NSDictionary(contentsOfFile: path) as? [String: Any],
+           let configKey = dict["GEMINI_API_KEY"] as? String {
+            let trimmed = configKey.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !trimmed.isEmpty {
+                return trimmed
+            }
+        }
+
+        // 3. Process environment (debugging / simulator)
+        if let envKey = ProcessInfo.processInfo.environment["GEMINI_API_KEY"] {
+            let trimmed = envKey.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !trimmed.isEmpty {
+                return trimmed
+            }
+        }
+
+        return nil
+    }
+
+    /// Whether any usable Gemini Vision API key is currently available.
+    public var isVisionAvailable: Bool {
+        guard let key = apiKey else { return false }
+        return !key.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    /// Active API key: prioritizes custom Keychain override, falling back to bundled key.
+    public var apiKey: String? {
+        get {
+            return customUserKey ?? bundledKey
+        }
+        set {
+            SecItemDelete(keychainQuery as CFDictionary)
+            if let value = newValue?.trimmingCharacters(in: .whitespacesAndNewlines), !value.isEmpty {
+                var query = keychainQuery
+                query[kSecValueData as String] = Data(value.utf8)
+                query[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
+                SecItemAdd(query as CFDictionary, nil)
+            }
+        }
+    }
+
+    private var keychainQuery: [String: Any] {
+        [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: Bundle.main.bundleIdentifier ?? "GemIDScanner",
+            kSecAttrAccount as String: apiKeyAccount
+        ]
     }
     
     /// Analyzes a specimen image with Stage 2 second-opinion reasoning, capped with a 6.0s timeout.
     public func analyzeSecondOpinion(image: UIImage, stage1Candidate: String) async throws -> Stage2Inference {
+        let cloudAnalysisEnabled = UserDefaults.standard.object(forKey: "GemIDScanner_HighPrecisionCloud") as? Bool ?? true
+        guard cloudAnalysisEnabled else {
+            return offlineShortlist(
+                stage1Candidate: stage1Candidate,
+                explanation: "Gemini vision analysis is turned off."
+            )
+        }
+
         // If an explicit Gemini API key is configured, perform live network request
         if let key = apiKey, !key.isEmpty {
-            do {
-                return try await performGeminiVisionRequest(image: image, apiKey: key, stage1Hint: stage1Candidate)
-            } catch {
-                // Fall back to localized geological reasoning engine on network timeout / failure
-                return synthesizeCloudReasoning(stage1Candidate: stage1Candidate)
-            }
+            return try await performGeminiVisionRequest(image: image, apiKey: key, stage1Hint: stage1Candidate)
         }
         
-        // Otherwise use intelligent built-in second-opinion engine for seamless offline / demo usage
-        try await Task.sleep(nanoseconds: 650_000_000) // Realistic cloud roundtrip delay
-        return synthesizeCloudReasoning(stage1Candidate: stage1Candidate)
+        return offlineShortlist(
+            stage1Candidate: stage1Candidate,
+            explanation: "No Gemini API key is configured."
+        )
     }
     
     // MARK: - Live Gemini API Call
@@ -136,9 +208,11 @@ public final class GeminiVisionService: @unchecked Sendable {
         }
         
         let base64String = jpegData.base64EncodedString()
-        let urlString = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=\(apiKey)"
-        
-        guard let url = URL(string: urlString) else {
+        guard var components = URLComponents(string: "https://generativelanguage.googleapis.com/v1beta/models/\(Self.modelName):generateContent") else {
+            throw NSError(domain: "GeminiVisionService", code: 400, userInfo: [NSLocalizedDescriptionKey: "Invalid API endpoint."])
+        }
+        components.queryItems = [URLQueryItem(name: "key", value: apiKey)]
+        guard let url = components.url else {
             throw NSError(domain: "GeminiVisionService", code: 400, userInfo: [NSLocalizedDescriptionKey: "Invalid API endpoint."])
         }
         
@@ -194,12 +268,13 @@ public final class GeminiVisionService: @unchecked Sendable {
             if let parsedData = cleanJson.data(using: .utf8),
                let parsedDict = try JSONSerialization.jsonObject(with: parsedData) as? [String: Any] {
                 
-                let name = parsedDict["pred_1"] as? String
-                    ?? parsedDict["topMineralName"] as? String
-                    ?? stage1Hint
+                guard let name = (parsedDict["pred_1"] as? String ?? parsedDict["topMineralName"] as? String),
+                      !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                    throw NSError(domain: "GeminiVisionService", code: 422, userInfo: [NSLocalizedDescriptionKey: "Gemini response did not contain a primary mineral identification."])
+                }
                 let score = parsedDict["conf_1"] as? Double
                     ?? parsedDict["confidenceScore"] as? Double
-                    ?? 0.88
+                    ?? 0.50
                 let pred2 = parsedDict["pred_2"] as? String
                 let conf2 = parsedDict["conf_2"] as? Double
                 let pred3 = parsedDict["pred_3"] as? String
@@ -230,16 +305,21 @@ public final class GeminiVisionService: @unchecked Sendable {
                 let lookalike = parsedDict["lookalike_twin"] as? String
                     ?? parsedDict["lookalikeDisambiguation"] as? String
                 
+                let rawName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+                let resolvedName = MineralDatabase.shared.find(byName: rawName)?.name ?? rawName
+                let resolvedPred2 = pred2.flatMap { MineralDatabase.shared.find(byName: $0)?.name ?? $0 }
+                let resolvedPred3 = pred3.flatMap { MineralDatabase.shared.find(byName: $0)?.name ?? $0 }
+                
                 return Stage2Inference(
-                    topMineralName: name,
-                    score: min(max(score, 0.30), 0.96),
+                    topMineralName: resolvedName,
+                    score: min(max(score, 0.05), 0.96),
                     reasoning: reasoning,
                     visualCuesObserved: visualCues,
                     suggestedTests: tests,
                     lookalikeDisambiguation: lookalike,
-                    candidate2Name: pred2,
+                    candidate2Name: resolvedPred2,
                     candidate2Score: conf2 != nil ? min(max(conf2!, 0.01), 0.96) : nil,
-                    candidate3Name: pred3,
+                    candidate3Name: resolvedPred3,
                     candidate3Score: conf3 != nil ? min(max(conf3!, 0.01), 0.96) : nil,
                     family: family,
                     identifiedForm: identifiedForm
@@ -247,25 +327,23 @@ public final class GeminiVisionService: @unchecked Sendable {
             }
         }
         
-        return synthesizeCloudReasoning(stage1Candidate: stage1Hint)
+        throw NSError(domain: "GeminiVisionService", code: 422, userInfo: [NSLocalizedDescriptionKey: "Gemini returned an unreadable identification response."])
     }
     
-    // MARK: - Offline Geological Synthesis
-    private func synthesizeCloudReasoning(stage1Candidate: String) -> Stage2Inference {
+    // MARK: - Offline Shortlist
+    private func offlineShortlist(stage1Candidate: String, explanation: String) -> Stage2Inference {
         let mineral = MineralDatabase.shared.find(byName: stage1Candidate)
         
         let name = mineral?.name ?? stage1Candidate
-        let luster = mineral?.luster ?? "Vitreous"
-        let formula = mineral?.chemicalFormula ?? "Silicate / Carbonate"
         let lookalikes = mineral?.topLookalikes
         let primaryLookalike = lookalikes?.first
         let secondaryLookalike = lookalikes != nil && lookalikes!.count > 1 ? lookalikes![1] : nil
         
-        let reasoning = "Stage 2 visual synthesis confirmed \(name) (\(formula)) based on distinctive \(luster.lowercased()) surface reflections, color distribution, and characteristic fracture morphology."
+        let reasoning = "\(explanation) \(name) is only an on-device color shortlist; verify the specimen with physical tests."
         let cues = [
-            "Luster matches expected \(luster.lowercased()) spectrum",
-            "Fracture geometry consistent with \(mineral?.fracture ?? "conchoidal/uneven") habit",
-            "Translucency profile aligns with authentic reference catalog"
+            "Central image color compared with the catalog color range",
+            "Luster and fracture cannot be verified without vision analysis",
+            "Use physical tests to confirm the specimen"
         ]
         
         let tests = mineral?.ruleOutTests.prefix(2).map { String($0) } ?? ["Mohs Hardness Scratch Test", "Ceramic Streak Tile Test"]
@@ -273,15 +351,15 @@ public final class GeminiVisionService: @unchecked Sendable {
         
         return Stage2Inference(
             topMineralName: name,
-            score: 0.91,
+            score: 0.25,
             reasoning: reasoning,
             visualCuesObserved: cues,
             suggestedTests: tests,
             lookalikeDisambiguation: disambig,
             candidate2Name: primaryLookalike?.mineralName,
-            candidate2Score: 0.06,
+            candidate2Score: 0.15,
             candidate3Name: secondaryLookalike?.mineralName,
-            candidate3Score: 0.03,
+            candidate3Score: 0.10,
             family: mineral?.family,
             identifiedForm: "rough"
         )

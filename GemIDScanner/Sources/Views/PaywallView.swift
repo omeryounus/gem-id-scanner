@@ -70,7 +70,7 @@ public struct PaywallView: View {
                                     .foregroundColor(.white)
                                     .multilineTextAlignment(.center)
                                 
-                                Text("Identify thousands of crystals, minerals, and gemstones without daily scan or collection limits.")
+                                Text("Identify specimens across our curated catalog without daily scan or collection limits.")
                                     .font(.system(size: 14))
                                     .foregroundColor(.white.opacity(0.7))
                                     .multilineTextAlignment(.center)
@@ -84,7 +84,7 @@ public struct PaywallView: View {
                             ProFeatureRow(
                                 icon: "infinity",
                                 title: "Unlimited AI Mineral Scans",
-                                description: "Scan as many rocks, crystals, and fossils as you want with no daily caps."
+                                description: "Scan as many specimens as you want with no daily caps."
                             )
                             ProFeatureRow(
                                 icon: "tray.full.fill",
@@ -99,12 +99,12 @@ public struct PaywallView: View {
                             ProFeatureRow(
                                 icon: "square.and.arrow.up.fill",
                                 title: "Export Specimen Certificates",
-                                description: "Generate beautiful custom share cards for field notes and social media."
+                                description: "Generate beautiful custom share cards for field notes and specimen documentation."
                             )
                             ProFeatureRow(
                                 icon: "bolt.horizontal.fill",
                                 title: "Instant Dual-Engine AI",
-                                description: "Combines fast on-device CoreML with Gemini Vision multimodal cloud intelligence."
+                                description: "Combines fast on-device optical analyzer with Gemini Vision multimodal cloud intelligence."
                             )
                         }
                         .padding(.horizontal, 16)
@@ -258,7 +258,7 @@ public struct PaywallView: View {
                 NavigationStack {
                     LegalDocumentView(
                         title: "Terms of Service",
-                        content: LegalText.termsOfService
+                        content: LegalDocumentContent.terms
                     )
                 }
             }
@@ -266,7 +266,7 @@ public struct PaywallView: View {
                 NavigationStack {
                     LegalDocumentView(
                         title: "Privacy Policy",
-                        content: LegalText.privacyPolicy
+                        content: LegalDocumentContent.privacy
                     )
                 }
             }
@@ -345,6 +345,8 @@ private struct ProFeatureRow: View {
 }
 
 private struct SubscriptionTierCard: View {
+    @EnvironmentObject private var storeKit: StoreKitService
+    
     let tier: SubscriptionTier
     let isSelected: Bool
     let onSelect: () -> Void
@@ -376,7 +378,7 @@ private struct SubscriptionTierCard: View {
                     Spacer()
                     
                     VStack(alignment: .trailing, spacing: 4) {
-                        Text(tier.priceString)
+                        Text(storeKit.displayPrice(for: tier))
                             .font(.system(size: 16, weight: .bold, design: .rounded))
                             .foregroundColor(isSelected ? .amberGold : .white)
                         
@@ -404,72 +406,4 @@ private struct SubscriptionTierCard: View {
         }
         .buttonStyle(PlainButtonStyle())
     }
-}
-
-private struct LegalDocumentView: View {
-    let title: String
-    let content: String
-    @Environment(\.dismiss) private var dismiss
-    
-    var body: some View {
-        ScrollView {
-            Text(content)
-                .font(.system(size: 14))
-                .foregroundColor(.white.opacity(0.85))
-                .lineSpacing(5)
-                .padding(20)
-        }
-        .background(Color(red: 0.07, green: 0.08, blue: 0.11).ignoresSafeArea())
-        .navigationTitle(title)
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .cancellationAction) {
-                Button("Done") { dismiss() }
-                    .foregroundColor(.amberGold)
-            }
-        }
-    }
-}
-
-private enum LegalText {
-    static let termsOfService = """
-    Gem ID Scanner Terms of Service
-    
-    1. Introduction
-    Welcome to Gem ID Scanner. By using our application, you agree to these Terms of Service. Please read them carefully.
-    
-    2. Educational & Informational Purpose
-    Gem ID Scanner provides visual and multimodal AI mineral identification suggestions for educational, recreational, and rockhounding purposes. Specimen identifications should not be relied upon as certified appraisals or legal valuations for commercial jewelry transactions.
-    
-    3. Subscription Billing & Cancellations
-    - Subscriptions automatically renew unless auto-renew is turned off at least 24 hours before the end of the current period.
-    - Payment is charged to your Apple ID account at confirmation of purchase.
-    - You can manage and cancel your subscriptions anytime in your Apple ID Account Settings after purchase.
-    - If offered, any unused portion of a free trial period will be forfeited when purchasing a subscription.
-    
-    4. Lifetime Pass
-    The Lifetime Pass provides indefinite access to all Pro features and future database expansions without recurring renewal fees.
-    
-    5. Contact & Support
-    For assistance or inquiries, please contact support@gemidscanner.app.
-    """
-    
-    static let privacyPolicy = """
-    Gem ID Scanner Privacy Policy
-    
-    1. Privacy First Architecture
-    We value your privacy. Gem ID Scanner processes initial visual analyses on-device using CoreML whenever possible.
-    
-    2. Cloud Vision Processing
-    When high-confidence cloud identification is active, specimen images are transmitted securely over TLS to Gemini Vision API for inference. Images are not retained or used for user profiling.
-    
-    3. Anonymized Improvement Feedback
-    If you opt into Model Improvement, submitted mineral corrections and anonymous diagnostic metadata are used solely to retrain and refine our mineralogy classification dataset. No personally identifiable information (PII) is attached.
-    
-    4. Local SwiftData Storage
-    Your saved specimen vault, collection notes, photos, and favorites remain stored locally on your device in your private SwiftData container.
-    
-    5. Data Deletion
-    You can clear all cached scans, offline correction queues, and collection records at any time from the app Settings.
-    """
 }

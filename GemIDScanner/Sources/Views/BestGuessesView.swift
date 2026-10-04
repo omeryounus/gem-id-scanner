@@ -173,9 +173,13 @@ public struct BestGuessesView: View {
             userConfirmed: true
         )
         modelContext.insert(record)
-        try? modelContext.save()
-        withAnimation {
-            isSaved = true
+        do {
+            try modelContext.save()
+            withAnimation {
+                isSaved = true
+            }
+        } catch {
+            print("Failed to save selected candidate: \(error.localizedDescription)")
         }
     }
 }
@@ -257,62 +261,6 @@ private struct CandidateOptionCard: View {
             )
         }
         .buttonStyle(PlainButtonStyle())
-    }
-}
-
-/// Modal view triggered when user selects "None of these match".
-public struct CorrectionTriggerModalView: View {
-    public let predictedMineral: String
-    public let onSubmitted: (String, String) -> Void
-    
-    @Environment(\.dismiss) private var dismiss
-    @State private var correctedName = ""
-    @State private var notes = ""
-    @State private var isSubmitted = false
-    
-    public var body: some View {
-        Form {
-            Section(header: Text("Model Prediction")) {
-                HStack {
-                    Text("Predicted:")
-                    Spacer()
-                    Text(predictedMineral)
-                        .fontWeight(.bold)
-                        .foregroundColor(.coralRed)
-                }
-            }
-            
-            Section(header: Text("Correct Mineral Identification")) {
-                TextField("Actual Mineral (e.g. Sodalite)", text: $correctedName)
-                TextField("Diagnostic notes / why this is correct", text: $notes, axis: .vertical)
-                    .lineLimit(3...6)
-            }
-            
-            Section {
-                Button(action: {
-                    guard !correctedName.trimmingCharacters(in: .whitespaces).isEmpty else { return }
-                    onSubmitted(correctedName, notes)
-                    isSubmitted = true
-                    dismiss()
-                }) {
-                    HStack {
-                        Spacer()
-                        Text("Submit Feedback")
-                            .fontWeight(.bold)
-                            .foregroundColor(.cyan)
-                        Spacer()
-                    }
-                }
-                .disabled(correctedName.trimmingCharacters(in: .whitespaces).isEmpty)
-            }
-        }
-        .navigationTitle("Suggest Correction")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .cancellationAction) {
-                Button("Cancel") { dismiss() }
-            }
-        }
     }
 }
 

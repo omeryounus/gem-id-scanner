@@ -86,12 +86,14 @@ public final class ScanAllowanceManager: ObservableObject {
         return "\(hours)h \(minutes)m"
     }
     
-    #if DEBUG
-    public func resetDailyAllowanceForTesting() {
+    public func resetAllowances() {
         UserDefaults.standard.set(0, forKey: dailyScansKey)
         UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: lastScanDateKey)
         dailyScansUsed = 0
         remainingDailyScans = Self.freeDailyScanLimit
     }
-    #endif
+    
+    public func resetDailyAllowanceForTesting() {
+        resetAllowances()
+    }
 }

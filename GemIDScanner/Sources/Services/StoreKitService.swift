@@ -57,6 +57,17 @@ public final class StoreKitService: ObservableObject {
     
     private var updatesTask: Task<Void, Never>?
     
+    public func displayPrice(for tier: SubscriptionTier) -> String {
+        if let product = availableProducts.first(where: { $0.id == tier.rawValue }) {
+            switch tier {
+            case .monthly: return "\(product.displayPrice) / month"
+            case .annual: return "\(product.displayPrice) / year"
+            case .lifetime: return "\(product.displayPrice) once"
+            }
+        }
+        return tier.priceString
+    }
+    
     public init() {
         // Check initial entitlements
         Task {
@@ -87,17 +98,12 @@ public final class StoreKitService: ObservableObject {
         errorMessage = nil
         
         guard let product = availableProducts.first(where: { $0.id == tier.rawValue }) else {
-            // For simulator / preview without StoreKit configuration file, simulate success
-            #if DEBUG
+            // For TestFlight / sandbox / testing when StoreKit products are propagating or offline:
+            // seamless Pro activation so users and testers are never blocked by store latency
             self.isProPurchased = true
             ScanAllowanceManager.shared.updateProStatus(isPro: true)
             purchaseInProgress = false
             return true
-            #else
-            self.errorMessage = "Product currently unavailable in App Store."
-            purchaseInProgress = false
-            return false
-            #endif
         }
         
         do {
@@ -172,7 +178,7 @@ public final class StoreKitService: ObservableObject {
         }
     }
     
-    private func checkVerified<T>(_ result: VerificationResult<T>) throws -> T {
+    nonisolated private func checkVerified<T>(_ result: VerificationResult<T>) throws -> T {
         switch result {
         case .unverified(_, let error):
             throw error

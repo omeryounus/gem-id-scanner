@@ -178,7 +178,7 @@ public final class CorrectionFeedbackService: ObservableObject {
         if UserDefaults.standard.object(forKey: "GemIDScanner_OptInModelImprovement") != nil {
             self.modelImprovementOptIn = UserDefaults.standard.bool(forKey: "GemIDScanner_OptInModelImprovement")
         } else {
-            self.modelImprovementOptIn = true
+            self.modelImprovementOptIn = false
         }
         loadQueue()
     }
@@ -352,41 +352,21 @@ public final class CorrectionFeedbackService: ObservableObject {
                             syncedCount += 1
                         }
                     }
+                    self.lastSyncDate = Date()
                 } else {
-                    // Fallback simulation for local beta testing / demo
-                    try await Task.sleep(nanoseconds: 600_000_000)
-                    for i in 0..<queuedCorrections.count {
-                        if !queuedCorrections[i].isUploaded {
-                            queuedCorrections[i].isUploaded = true
-                            queuedCorrections[i].uploadTimestamp = Date()
-                            syncedCount += 1
-                        }
-                    }
+                    let status = (response as? HTTPURLResponse)?.statusCode ?? 500
+                    failedCount = pending.count
+                    self.lastSyncError = "Sync endpoint returned HTTP \(status)"
                 }
             } catch {
-                // If live endpoint is offline or unavailable during beta, still gracefully mark synced in beta mode
-                try? await Task.sleep(nanoseconds: 500_000_000)
-                for i in 0..<queuedCorrections.count {
-                    if !queuedCorrections[i].isUploaded {
-                        queuedCorrections[i].isUploaded = true
-                        queuedCorrections[i].uploadTimestamp = Date()
-                        syncedCount += 1
-                    }
-                }
+                failedCount = pending.count
+                self.lastSyncError = error.localizedDescription
             }
         } else {
-            // Simulated sync latency
-            try? await Task.sleep(nanoseconds: 600_000_000)
-            for i in 0..<queuedCorrections.count {
-                if !queuedCorrections[i].isUploaded {
-                    queuedCorrections[i].isUploaded = true
-                    queuedCorrections[i].uploadTimestamp = Date()
-                    syncedCount += 1
-                }
-            }
+            failedCount = pending.count
+            self.lastSyncError = "No sync endpoint configured"
         }
         
-        self.lastSyncDate = Date()
         saveQueue()
         return (syncedCount, failedCount)
     }
@@ -434,6 +414,7 @@ public final class CorrectionFeedbackService: ObservableObject {
     public func exportCorrectionsDatasetZip() -> URL? {
         let fileManager = FileManager.default
         let tempDir = fileManager.temporaryDirectory.appendingPathComponent("GemID_Dataset_Export_\(UUID().uuidString)", isDirectory: true)
+        defer { try? fileManager.removeItem(at: tempDir) }
         
         do {
             try fileManager.createDirectory(at: tempDir, withIntermediateDirectories: true)
@@ -586,20 +567,27 @@ public final class CorrectionFeedbackService: ObservableObject {
     }
     
     private func saveQueue() {
-        // Save to disk JSON file
         let jsonFileURL = correctionsDirectory.appendingPathComponent("corrections.json")
-        if let data = try? JSONEncoder().encode(queuedCorrections) {
-            try? data.write(to: jsonFileURL)
-            // Also store in UserDefaults as redundant cache
-            UserDefaults.standard.set(data, forKey: queueDefaultsKey)
+        let metadataOnly = queuedCorrections.map { item -> MineralCorrectionItem in
+            var copy = item
+            copy.photoData = nil
+            return copy
         }
+        if let data = try? JSONEncoder().encode(metadataOnly) {
+            try? data.write(to: jsonFileURL)
+        }
+        UserDefaults.standard.removeObject(forKey: queueDefaultsKey)
     }
     
     private func loadQueue() {
         let jsonFileURL = correctionsDirectory.appendingPathComponent("corrections.json")
         if let fileData = try? Data(contentsOf: jsonFileURL),
            let list = try? JSONDecoder().decode([MineralCorrectionItem].self, from: fileData) {
-            self.queuedCorrections = list
+            self.queuedCorrections = list.map { item in
+                var copy = item
+                copy.photoData = loadImageFromDisk(id: item.id)
+                return copy
+            }
             return
         }
         
@@ -607,6 +595,7 @@ public final class CorrectionFeedbackService: ObservableObject {
         if let data = UserDefaults.standard.data(forKey: queueDefaultsKey),
            let list = try? JSONDecoder().decode([MineralCorrectionItem].self, from: data) {
             self.queuedCorrections = list
+            saveQueue()
             return
         }
         
@@ -648,15 +637,18 @@ private struct LegacyCorrectionItem: Codable {
 // MARK: - Pure Swift ZIP Format Writer (Store Compression)
 public enum PureSwiftZipWriter {
     public static func createZip(entries: [(name: String, data: Data)]) -> Data? {
+        guard entries.count <= UInt16.max else { return nil }
         var zipData = Data()
         var centralDirectory = Data()
         var fileOffsets: [UInt32] = []
         
         for entry in entries {
+            guard zipData.count <= UInt32.max, entry.data.count <= UInt32.max else { return nil }
             let offset = UInt32(zipData.count)
             fileOffsets.append(offset)
             
             let nameBytes = Array(entry.name.utf8)
+            guard nameBytes.count <= UInt16.max else { return nil }
             let nameLength = UInt16(nameBytes.count)
             let dataLength = UInt32(entry.data.count)
             let crc = crc32(entry.data)

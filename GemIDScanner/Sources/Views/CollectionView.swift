@@ -239,11 +239,6 @@ public struct SpecimenDetailSheet: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     
-    @State private var isEditing = false
-    @State private var notesText = ""
-    @State private var originText = ""
-    @State private var weightText = ""
-    @State private var selectedForm = "Rough"
     @State private var showDeleteConfirm = false
     @State private var showEncyclopedia = false
     
@@ -354,7 +349,11 @@ public struct SpecimenDetailSheet: View {
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
                 Button("Done") {
-                    try? modelContext.save()
+                    do {
+                        try modelContext.save()
+                    } catch {
+                        print("Failed to save specimen changes: \(error.localizedDescription)")
+                    }
                     dismiss()
                 }
             }
@@ -362,7 +361,11 @@ public struct SpecimenDetailSheet: View {
         .confirmationDialog("Delete Specimen?", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
             Button("Delete", role: .destructive) {
                 modelContext.delete(specimen)
-                try? modelContext.save()
+                do {
+                    try modelContext.save()
+                } catch {
+                    print("Failed to delete specimen: \(error.localizedDescription)")
+                }
                 dismiss()
             }
             Button("Cancel", role: .cancel) {}

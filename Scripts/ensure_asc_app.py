@@ -47,6 +47,31 @@ DEFAULT_LOCALE = "en-US"
 API_BASE_URL = "https://api.appstoreconnect.apple.com"
 
 
+def load_dotenv(env_path: Optional[Path] = None) -> None:
+    """Load simple KEY=VALUE or export KEY=VALUE from .env file into os.environ if not already set."""
+    if env_path is None:
+        env_path = Path.cwd() / ".env"
+    if not env_path.exists():
+        return
+    try:
+        with open(env_path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                if line.startswith("export "):
+                    line = line[7:].strip()
+                if "=" not in line:
+                    continue
+                key, val = line.split("=", 1)
+                key = key.strip()
+                val = val.strip().strip("\"'")
+                if key and key not in os.environ:
+                    os.environ[key] = val
+    except Exception as e:
+        print(f"Warning: Could not read {env_path}: {e}")
+
+
 def load_credentials(args: argparse.Namespace) -> Tuple[str, str, str]:
     """Resolve key_id, issuer_id, and PEM private key content."""
     key_id = (
@@ -65,7 +90,7 @@ def load_credentials(args: argparse.Namespace) -> Tuple[str, str, str]:
     if not key_id or not issuer_id:
         sys.exit(
             "Error: Missing App Store Connect API credentials. Set APPSTORE_API_KEY_ID "
-            "and APPSTORE_API_ISSUER_ID or pass --key-id and --issuer-id."
+            "and APPSTORE_API_ISSUER_ID in .env or pass --key-id and --issuer-id."
         )
 
     pem = None
@@ -79,19 +104,45 @@ def load_credentials(args: argparse.Namespace) -> Tuple[str, str, str]:
         or os.environ.get("APP_STORE_CONNECT_API_KEY_KEY")
     )
 
-    if key_path and Path(key_path).exists():
-        pem = Path(key_path).read_text(encoding="utf-8")
-    elif key_b64:
-        pem = base64.b64decode(key_b64.strip()).decode("utf-8")
-    else:
-        default_file = Path.home() / f".appstoreconnect/private_keys/AuthKey_{key_id}.p8"
-        if default_file.exists():
-            pem = default_file.read_text(encoding="utf-8")
+    if key_path:
+        try:
+            expanded_path = Path(key_path).expanduser()
+            if expanded_path.exists():
+                pem = expanded_path.read_text(encoding="utf-8")
+            else:
+                print(f"Warning: Key file path '{key_path}' does not exist.")
+        except Exception as e:
+            print(f"Note: Could not read '{key_path}': {e}")
+
+    if not pem and key_b64:
+        try:
+            decoded = base64.b64decode(key_b64.strip()).decode("utf-8")
+            if "PRIVATE KEY" in decoded:
+                pem = decoded
+            else:
+                print("Note: APPSTORE_API_KEY_BASE64 is not a PEM private key (might be a PKCS#12 certificate).")
+        except Exception as e:
+            print(f"Note: Could not decode APPSTORE_API_KEY_BASE64 as UTF-8 PEM: {e}")
+
+    if not pem:
+        search_paths = [
+            Path.home() / f".appstoreconnect/private_keys/AuthKey_{key_id}.p8",
+            Path.home() / f".private_keys/AuthKey_{key_id}.p8",
+            Path.cwd() / f"AuthKey_{key_id}.p8",
+        ]
+        for candidate in search_paths:
+            try:
+                if candidate.exists():
+                    print(f"Found private key at: {candidate}")
+                    pem = candidate.read_text(encoding="utf-8")
+                    break
+            except Exception:
+                pass
 
     if not pem:
         sys.exit(
-            "Error: No App Store Connect .p8 private key found. Set APPSTORE_API_KEY_BASE64 "
-            f"or place AuthKey_{key_id}.p8 in ~/.appstoreconnect/private_keys/"
+            f"Error: No App Store Connect .p8 private key found. Set APPSTORE_API_KEY_BASE64, "
+            f"APP_STORE_CONNECT_API_KEY_KEY_FILEPATH, or place AuthKey_{key_id}.p8 in ~/.appstoreconnect/private_keys/"
         )
 
     return key_id.strip(), issuer_id.strip(), pem.strip()
@@ -240,7 +291,14 @@ def ensure_app_record(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Ensure ASC Bundle ID and App record exist.")
+    # Load .env before parsing arguments
+    env_file_parser = argparse.ArgumentParser(add_help=False)
+    env_file_parser.add_argument("--env-file", default=".env", help="Path to .env file (default: .env)")
+    known_args, _ = env_file_parser.parse_known_args()
+    if known_args.env_file:
+        load_dotenv(Path(known_args.env_file))
+
+    parser = argparse.ArgumentParser(description="Ensure ASC Bundle ID and App record exist.", parents=[env_file_parser])
     parser.add_argument("--key-id", help="App Store Connect API Key ID")
     parser.add_argument("--issuer-id", help="App Store Connect API Issuer ID")
     parser.add_argument("--key-base64", help="Base64 encoded AuthKey .p8 content")

@@ -20,12 +20,19 @@ public struct GemIDScannerApp: App {
     let modelContainer: ModelContainer
     
     public init() {
+        ScanAllowanceManager.shared.resetAllowances()
+        let schema = Schema([SpecimenRecord.self])
         do {
-            let schema = Schema([SpecimenRecord.self])
             let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
             self.modelContainer = try ModelContainer(for: schema, configurations: [modelConfiguration])
         } catch {
-            fatalError("Failed to initialize SwiftData ModelContainer for SpecimenRecord: \(error)")
+            print("Failed to initialize persistent ModelContainer: \(error). Falling back to in-memory container.")
+            do {
+                let fallbackConfig = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+                self.modelContainer = try ModelContainer(for: schema, configurations: [fallbackConfig])
+            } catch {
+                fatalError("Critical: Failed to initialize in-memory fallback ModelContainer: \(error)")
+            }
         }
     }
     

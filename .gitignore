@@ -5,4 +5,15 @@
 .DS_Store
 __pycache__/
 *.pyc
-
+.env
+.env.*
+*.p8
+*.p12
+*.mobileprovision
+vendor/bundle/
+.bundle/
+build/
+fastlane/report.xml
+fastlane/README.md
+*GeminiConfig*.plist
+*Secrets*.plist
