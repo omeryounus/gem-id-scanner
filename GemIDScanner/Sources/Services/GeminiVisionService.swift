@@ -1,6 +1,10 @@
 import Foundation
 import UIKit
 
+#if canImport(CryptoKit)
+import CryptoKit
+#endif
+
 /// Stage 2 multimodal cloud vision analysis service.
 ///
 /// Sends high-resolution specimen imagery to Gemini Vision API for deep geological reasoning,
@@ -8,6 +12,85 @@ import UIKit
 /// Features resilient timeout management, offline fallback, and custom API key configuration.
 public final class GeminiVisionService: @unchecked Sendable {
     public static let shared = GeminiVisionService()
+    
+    public static let promptTemplate: String = """
+    You are an expert gemologist, mineralogist, and crystallographer. Your task is to perform rigorous, non-destructive optical identification of the mineral, gemstone, or rock specimen shown in the provided photograph(s).
+    Stage 1 on-device classifier shortlisted: "{STAGE_1_HINT}".
+
+    ## 1. OPTICAL & MORPHOLOGICAL ATTRIBUTE EXAMINATION
+    Carefully evaluate visible features:
+    1. Crystal System & Habit: Prismatic, hexagonal, cubic, botryoidal, massive, rhombohedral, fibrous, bladed, tabular, geode/cluster, octahedron, dodecahedron.
+    2. Luster & Surface Sheen: Vitreous, adamantine, metallic, sub-metallic, silky, pearly, greasy/waxy, resinous, dull/earthy.
+    3. Cleavage vs. Fracture Morphology: Conchoidal fracture vs perfect planar cleavage (cubic, rhombohedral, basal, octahedral).
+    4. Color Distribution & Zoning: Base body color vs trace impurities, color zoning, phantom crystals.
+    5. Inclusions & Internal Phenomena: Rutile needles, tourmaline silk, pyrite specks, dendrites, gas bubbles/swirls (synthetic/glass).
+    6. Optical Phenomena: Labradorescence, adularescence, chatoyancy, asterism, pleochroism, aventurescence.
+    7. Specimen Form: Rough crystal, tumbled pebble, cabochon, faceted cut gem, cluster/druzy, polished slab, specimen on matrix.
+
+    ## 2. LOOKALIKE SEPARATION & CONFUSION PAIR CONTRAST
+    Actively contrast known lookalike twins before finalizing predictions:
+    - Clear Quartz vs Glass / Topaz / Calcite / Selenite (conchoidal fracture & striations vs bubbles/swirls or basal/rhombohedral cleavage).
+    - Citrine vs Heat-Treated Amethyst vs Yellow Topaz (uniform yellow throughout vs burnt orange tips on opaque white quartz bases).
+    - Amethyst vs Purple Fluorite / Tanzanite / Iolite (trigonal prism & conchoidal fracture vs cubic habit & octahedral cleavage).
+    - Turquoise vs Dyed Howlite / Dyed Magnesite / Chrysocolla / Amazonite (natural limonite matrix vs dye pooled in spiderweb fractures).
+    - Emerald vs Green Tourmaline / Green Fluorite / Dyed Quartz (hexagonal prism & 3-phase inclusions vs vertical striations & triangular cross-section).
+    - Obsidian vs Black Tourmaline (Schorl) vs Black Onyx vs Jet vs Hematite (glassy conchoidal fracture vs longitudinal striations and columnar prism).
+    - Moonstone vs Rainbow Moonstone vs Opalite vs White Chalcedony (billowy adularescence vs multi-color schiller vs orange glow synthetic glass).
+    - Jade (Nephrite) vs Jadeite vs Serpentine vs Green Aventurine (greasy fibrous toughness vs granular vs soft vs aventurescent platelets).
+    - Lapis Lazuli vs Sodalite vs Azurite vs Dumortierite (deep ultramarine with pyrite specks vs royal blue with white nepheline, no pyrite).
+    - Malachite vs Chrysocolla vs Dyed Howlite (concentric banded rings vs non-banded teal cyan).
+    - Ruby vs Red Spinel vs Almandine Garnet vs Red Glass (hexagonal tabular habit & rutile silk vs octahedrons vs dodecahedrons).
+    - Sapphire vs Blue Kyanite vs Tanzanite vs Blue Spinel (hexagonal corundum vs bladed crystals with directional hardness).
+
+    ## 3. SHORTLIST-THEN-SEPARATE RANKING DISCIPLINE, TIE-BREAKS, AND ANTI-DEFAULT RULES
+    - Phase 1 Shortlist: Formulate candidate shortlist of top 3 most plausible minerals before committing to rank 1.
+    - Phase 2 Separating Contrast: Actively inspect for discriminating diagnostic features to promote a candidate to pred_1 ONLY when visual evidence supports it over lookalikes.
+    - Phase 3 Anti-Default Rules: NEVER default to generic common species (Clear Quartz, Glass, Slag, Calcite, Dyed Agate) when specific diagnostic traits exist. For tumbled/cut stones, evaluate luster, cleavage, and color depth.
+    - Tie-Breaks: Apply specific physical contrast criteria (heated tips -> Heat-Treated Amethyst, dye pooling -> Dyed Howlite, multi-color flash -> Rainbow Moonstone, pyrite -> Lapis).
+    - Candidate Spread Calibration:
+      - Confirmed Band (conf_1 = 0.85 - 0.96): conf_1 - conf_2 margin >= 0.60. Never exceed 0.96.
+      - Likely Band (conf_1 = 0.55 - 0.84): conf_1 - conf_2 margin = 0.15 - 0.55.
+      - Best Guesses Band (conf_1 < 0.55): conf_1 - conf_2 margin < 0.15.
+
+    ## 4. RESPONSE FORMAT
+    Return valid JSON in this exact structure without markdown backticks:
+    {
+      "pred_1": "Primary Mineral Name",
+      "conf_1": 0.92,
+      "pred_2": "Second Mineral Candidate",
+      "conf_2": 0.05,
+      "pred_3": "Third Mineral Candidate",
+      "conf_3": 0.03,
+      "family": "Mineral Family",
+      "identified_form": "rough | tumbled | cabochon | cut | cluster | slab",
+      "visual_cues": ["cue 1", "cue 2", "cue 3"],
+      "lookalike_twin": "Primary lookalike twin species",
+      "twin_in_top3": true,
+      "separating_tests": [
+        {
+          "test_name": "Mohs Hardness Scratch Test",
+          "procedure": "Attempt to scratch standard glass plate (Mohs 5.5).",
+          "diagnostic_rule": "Amethyst scratches glass; Fluorite cannot."
+        }
+      ],
+      "reasoning": "Detailed geological explanation applying shortlist-then-separate logic, anti-default validation, and tie-break reasoning."
+    }
+    """
+    
+    /// SHA-256 hash identifying the exact version of the prompt used during inference.
+    public static var promptSHA256: String {
+        let inputData = Data(promptTemplate.utf8)
+        #if canImport(CryptoKit)
+        let digest = SHA256.hash(data: inputData)
+        return digest.map { String(format: "%02x", $0) }.joined()
+        #else
+        var hash: UInt64 = 5381
+        for byte in inputData {
+            hash = ((hash << 5) &+ hash) &+ UInt64(byte)
+        }
+        return String(format: "%016llx", hash)
+        #endif
+    }
     
     private let apiKeyDefaultsKey = "GemIDScanner_GeminiAPIKey"
     private let session: URLSession
@@ -47,7 +130,6 @@ public final class GeminiVisionService: @unchecked Sendable {
     }
     
     // MARK: - Live Gemini API Call
-    // MARK: - Live Gemini API Call
     private func performGeminiVisionRequest(image: UIImage, apiKey: String, stage1Hint: String) async throws -> Stage2Inference {
         guard let jpegData = image.jpegData(compressionQuality: 0.75) else {
             throw NSError(domain: "GeminiVisionService", code: 400, userInfo: [NSLocalizedDescriptionKey: "Failed to compress image."])
@@ -65,69 +147,7 @@ public final class GeminiVisionService: @unchecked Sendable {
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
         request.timeoutInterval = 6.0
         
-        let promptText = """
-        You are an expert gemologist, mineralogist, and crystallographer. Your task is to perform rigorous, non-destructive optical identification of the mineral, gemstone, or rock specimen shown in the provided photograph(s).
-        Stage 1 on-device classifier shortlisted: "\(stage1Hint)".
-
-        ## 1. OPTICAL & MORPHOLOGICAL ATTRIBUTE EXAMINATION
-        Carefully evaluate visible features:
-        1. Crystal System & Habit: Prismatic, hexagonal, cubic, botryoidal, massive, rhombohedral, fibrous, bladed, tabular, geode/cluster, octahedron, dodecahedron.
-        2. Luster & Surface Sheen: Vitreous, adamantine, metallic, sub-metallic, silky, pearly, greasy/waxy, resinous, dull/earthy.
-        3. Cleavage vs. Fracture Morphology: Conchoidal fracture vs perfect planar cleavage (cubic, rhombohedral, basal, octahedral).
-        4. Color Distribution & Zoning: Base body color vs trace impurities, color zoning, phantom crystals.
-        5. Inclusions & Internal Phenomena: Rutile needles, tourmaline silk, pyrite specks, dendrites, gas bubbles/swirls (synthetic/glass).
-        6. Optical Phenomena: Labradorescence, adularescence, chatoyancy, asterism, pleochroism, aventurescence.
-        7. Specimen Form: Rough crystal, tumbled pebble, cabochon, faceted cut gem, cluster/druzy, polished slab, specimen on matrix.
-
-        ## 2. LOOKALIKE SEPARATION & CONFUSION PAIR CONTRAST
-        Actively contrast known lookalike twins before finalizing predictions:
-        - Clear Quartz vs Glass / Topaz / Calcite / Selenite (conchoidal fracture & striations vs bubbles/swirls or basal/rhombohedral cleavage).
-        - Citrine vs Heat-Treated Amethyst vs Yellow Topaz (uniform yellow throughout vs burnt orange tips on opaque white quartz bases).
-        - Amethyst vs Purple Fluorite / Tanzanite / Iolite (trigonal prism & conchoidal fracture vs cubic habit & octahedral cleavage).
-        - Turquoise vs Dyed Howlite / Dyed Magnesite / Chrysocolla / Amazonite (natural limonite matrix vs dye pooled in spiderweb fractures).
-        - Emerald vs Green Tourmaline / Green Fluorite / Dyed Quartz (hexagonal prism & 3-phase inclusions vs vertical striations & triangular cross-section).
-        - Obsidian vs Black Tourmaline (Schorl) vs Black Onyx vs Jet vs Hematite (glassy conchoidal fracture vs longitudinal striations and columnar prism).
-        - Moonstone vs Rainbow Moonstone vs Opalite vs White Chalcedony (billowy adularescence vs multi-color schiller vs orange glow synthetic glass).
-        - Jade (Nephrite) vs Jadeite vs Serpentine vs Green Aventurine (greasy fibrous toughness vs granular vs soft vs aventurescent platelets).
-        - Lapis Lazuli vs Sodalite vs Azurite vs Dumortierite (deep ultramarine with pyrite specks vs royal blue with white nepheline, no pyrite).
-        - Malachite vs Chrysocolla vs Dyed Howlite (concentric banded rings vs non-banded teal cyan).
-        - Ruby vs Red Spinel vs Almandine Garnet vs Red Glass (hexagonal tabular habit & rutile silk vs octahedrons vs dodecahedrons).
-        - Sapphire vs Blue Kyanite vs Tanzanite vs Blue Spinel (hexagonal corundum vs bladed crystals with directional hardness).
-
-        ## 3. SHORTLIST-THEN-SEPARATE RANKING DISCIPLINE, TIE-BREAKS, AND ANTI-DEFAULT RULES
-        - Phase 1 Shortlist: Formulate candidate shortlist of top 3 most plausible minerals before committing to rank 1.
-        - Phase 2 Separating Contrast: Actively inspect for discriminating diagnostic features to promote a candidate to pred_1 ONLY when visual evidence supports it over lookalikes.
-        - Phase 3 Anti-Default Rules: NEVER default to generic common species (Clear Quartz, Glass, Slag, Calcite, Dyed Agate) when specific diagnostic traits exist. For tumbled/cut stones, evaluate luster, cleavage, and color depth.
-        - Tie-Breaks: Apply specific physical contrast criteria (heated tips -> Heat-Treated Amethyst, dye pooling -> Dyed Howlite, multi-color flash -> Rainbow Moonstone, pyrite -> Lapis).
-        - Candidate Spread Calibration:
-          - Confirmed Band (conf_1 = 0.85 - 0.96): conf_1 - conf_2 margin >= 0.60. Never exceed 0.96.
-          - Likely Band (conf_1 = 0.55 - 0.84): conf_1 - conf_2 margin = 0.15 - 0.55.
-          - Best Guesses Band (conf_1 < 0.55): conf_1 - conf_2 margin < 0.15.
-
-        ## 4. RESPONSE FORMAT
-        Return valid JSON in this exact structure without markdown backticks:
-        {
-          "pred_1": "Primary Mineral Name",
-          "conf_1": 0.92,
-          "pred_2": "Second Mineral Candidate",
-          "conf_2": 0.05,
-          "pred_3": "Third Mineral Candidate",
-          "conf_3": 0.03,
-          "family": "Mineral Family",
-          "identified_form": "rough | tumbled | cabochon | cut | cluster | slab",
-          "visual_cues": ["cue 1", "cue 2", "cue 3"],
-          "lookalike_twin": "Primary lookalike twin species",
-          "twin_in_top3": true,
-          "separating_tests": [
-            {
-              "test_name": "Mohs Hardness Scratch Test",
-              "procedure": "Attempt to scratch standard glass plate (Mohs 5.5).",
-              "diagnostic_rule": "Amethyst scratches glass; Fluorite cannot."
-            }
-          ],
-          "reasoning": "Detailed geological explanation applying shortlist-then-separate logic, anti-default validation, and tie-break reasoning."
-        }
-        """
+        let promptText = Self.promptTemplate.replacingOccurrences(of: "{STAGE_1_HINT}", with: stage1Hint)
         
         let payload: [String: Any] = [
             "contents": [

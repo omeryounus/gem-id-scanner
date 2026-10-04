@@ -3,13 +3,16 @@ import SwiftUI
 /// Screen: Offline Mineral Correction Queue Management
 ///
 /// Displays user-submitted misidentification corrections, offline telemetry storage,
-/// sync status with remote training dataset, and queue clearing controls.
+/// specimen form & verification basis metadata, sync status with remote training dataset,
+/// and dataset export controls.
 public struct CorrectionQueueView: View {
     @EnvironmentObject private var feedbackService: CorrectionFeedbackService
     @Environment(\.dismiss) private var dismiss
     
     @State private var showClearConfirmation = false
     @State private var syncToastMessage: String?
+    @State private var exportZipURL: URL?
+    @State private var showExportSheet = false
     
     public init() {}
     
@@ -42,7 +45,7 @@ public struct CorrectionQueueView: View {
                                     .font(.system(size: 11, weight: .semibold, design: .monospaced))
                                     .foregroundColor(feedbackService.pendingCount > 0 ? .amberGold : .emeraldGreen)
                                 
-                                Label("\(feedbackService.queuedCorrections.count - feedbackService.pendingCount) Synced", systemImage: "checkmark.circle.fill")
+                                Label("\(feedbackService.uploadedCount) Synced", systemImage: "checkmark.circle.fill")
                                     .font(.system(size: 11, weight: .semibold, design: .monospaced))
                                     .foregroundColor(.emeraldGreen)
                             }
@@ -51,53 +54,67 @@ public struct CorrectionQueueView: View {
                         .listRowBackground(Color.white.opacity(0.04))
                     }
                     
-                    // Queue Action Controls
+                    // Queue Action Controls (Sync Now, Export Dataset, Clear Synced)
                     Section {
-                        HStack(spacing: 12) {
-                            Button(action: {
-                                handleSync()
-                            }) {
-                                HStack {
-                                    if feedbackService.isSyncing {
-                                        ProgressView()
-                                            .tint(.white)
-                                    } else {
-                                        Image(systemName: "arrow.clockwise.icloud.fill")
-                                        Text("Sync Pending Queue")
+                        VStack(spacing: 8) {
+                            HStack(spacing: 10) {
+                                Button(action: handleSync) {
+                                    HStack {
+                                        if feedbackService.isSyncing {
+                                            ProgressView()
+                                                .tint(.white)
+                                        } else {
+                                            Image(systemName: "arrow.clockwise.icloud.fill")
+                                            Text("Sync Pending")
+                                                .fontWeight(.semibold)
+                                        }
+                                    }
+                                    .font(.system(size: 13))
+                                    .foregroundColor(.white)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 10)
+                                    .background(Color.cyan.opacity(0.25))
+                                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 10)
+                                            .stroke(Color.cyan.opacity(0.6), lineWidth: 1)
+                                    )
+                                }
+                                .buttonStyle(PlainButtonStyle())
+                                .disabled(feedbackService.isSyncing || feedbackService.pendingCount == 0)
+                                .opacity(feedbackService.pendingCount == 0 ? 0.5 : 1.0)
+                                
+                                Button(action: handleExportDataset) {
+                                    HStack {
+                                        Image(systemName: "square.and.arrow.up.fill")
+                                        Text("Export Zip")
                                             .fontWeight(.semibold)
                                     }
+                                    .font(.system(size: 13))
+                                    .foregroundColor(.black)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 10)
+                                    .background(Color.amberGold)
+                                    .clipShape(RoundedRectangle(cornerRadius: 10))
                                 }
-                                .font(.system(size: 14))
-                                .foregroundColor(.white)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 10)
-                                .background(Color.cyan.opacity(0.25))
-                                .clipShape(RoundedRectangle(cornerRadius: 10))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 10)
-                                        .stroke(Color.cyan.opacity(0.6), lineWidth: 1)
-                                )
+                                .buttonStyle(PlainButtonStyle())
                             }
-                            .buttonStyle(PlainButtonStyle())
-                            .disabled(feedbackService.isSyncing || feedbackService.pendingCount == 0)
-                            .opacity(feedbackService.pendingCount == 0 ? 0.5 : 1.0)
                             
-                            Button(action: {
-                                feedbackService.clearUploadedCorrections()
-                            }) {
-                                HStack {
-                                    Image(systemName: "trash")
-                                    Text("Clear Synced")
-                                        .fontWeight(.semibold)
+                            if feedbackService.uploadedCount > 0 {
+                                Button(action: {
+                                    feedbackService.clearUploadedCorrections()
+                                }) {
+                                    HStack {
+                                        Image(systemName: "trash")
+                                        Text("Clear Synced Corrections (\(feedbackService.uploadedCount))")
+                                    }
+                                    .font(.system(size: 12, weight: .medium))
+                                    .foregroundColor(.white.opacity(0.6))
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 6)
                                 }
-                                .font(.system(size: 14))
-                                .foregroundColor(.white.opacity(0.8))
-                                .padding(.horizontal, 14)
-                                .padding(.vertical, 10)
-                                .background(Color.white.opacity(0.06))
-                                .clipShape(RoundedRectangle(cornerRadius: 10))
+                                .buttonStyle(PlainButtonStyle())
                             }
-                            .buttonStyle(PlainButtonStyle())
                         }
                         .listRowBackground(Color.clear)
                         .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
@@ -141,6 +158,11 @@ public struct CorrectionQueueView: View {
         }
         .navigationTitle("Offline Correction Queue")
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $showExportSheet) {
+            if let url = exportZipURL {
+                ShareActivitySheet(activityItems: [url])
+            }
+        }
         .toolbar {
             if !feedbackService.queuedCorrections.isEmpty {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -192,14 +214,21 @@ public struct CorrectionQueueView: View {
     
     private func handleSync() {
         Task {
-            let count = await feedbackService.syncPendingCorrections()
+            let result = await feedbackService.syncPendingCorrections()
             withAnimation {
-                syncToastMessage = "Successfully synced \(count) correction\(count == 1 ? "" : "s")!"
+                syncToastMessage = "Successfully synced \(result.synced) correction\(result.synced == 1 ? "" : "s")!"
             }
             try? await Task.sleep(nanoseconds: 2_500_000_000)
             withAnimation {
                 syncToastMessage = nil
             }
+        }
+    }
+    
+    private func handleExportDataset() {
+        if let zipURL = feedbackService.exportCorrectionsDatasetZip() {
+            self.exportZipURL = zipURL
+            self.showExportSheet = true
         }
     }
 }
@@ -208,11 +237,12 @@ public struct CorrectionQueueView: View {
 
 private struct CorrectionItemRow: View {
     let item: MineralCorrectionItem
+    @EnvironmentObject private var feedbackService: CorrectionFeedbackService
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 10) {
+            // Header Row: Status Badge + Date
             HStack(alignment: .center) {
-                // Status Badge
                 HStack(spacing: 4) {
                     Circle()
                         .fill(item.isUploaded ? Color.emeraldGreen : Color.amberGold)
@@ -233,57 +263,93 @@ private struct CorrectionItemRow: View {
                     .foregroundColor(.white.opacity(0.4))
             }
             
-            // Predicted -> Corrected Visual Diff
-            HStack(spacing: 10) {
-                if let photoData = item.photoData, let uiImage = UIImage(data: photoData) {
+            // Specimen Image & Name Contrast
+            HStack(spacing: 12) {
+                let photoData = item.photoData ?? feedbackService.loadImageFromDisk(id: item.id)
+                if let photoData = photoData, let uiImage = UIImage(data: photoData) {
                     Image(uiImage: uiImage)
                         .resizable()
                         .scaledToFill()
-                        .frame(width: 44, height: 44)
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
-                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.white.opacity(0.15), lineWidth: 1))
+                        .frame(width: 52, height: 52)
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.white.opacity(0.15), lineWidth: 1))
                 }
                 
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Predicted")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundColor(.white.opacity(0.4))
-                    Text(item.predictedMineral)
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(.coralRed)
-                        .strikethrough()
-                }
-                
-                Image(systemName: "arrow.right")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundColor(.white.opacity(0.4))
-                
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("User Correction")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundColor(.white.opacity(0.4))
-                    Text(item.userCorrectedMineral)
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundColor(.emeraldGreen)
+                VStack(alignment: .leading, spacing: 4) {
+                    // Ground Truth Label
+                    HStack(spacing: 6) {
+                        Image(systemName: "checkmark.seal.fill")
+                            .font(.system(size: 13))
+                            .foregroundColor(.emeraldGreen)
+                        Text(item.userCorrectedMineral)
+                            .font(.system(size: 16, weight: .bold, design: .rounded))
+                            .foregroundColor(.white)
+                    }
+                    
+                    // Original Prediction
+                    HStack(spacing: 4) {
+                        Text("Model said:")
+                            .font(.system(size: 11))
+                            .foregroundColor(.white.opacity(0.4))
+                        Text(item.pred_1)
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundColor(.coralRed.opacity(0.9))
+                            .strikethrough()
+                        Text("(\(Int(item.conf_1 * 100))%)")
+                            .font(.system(size: 10, design: .monospaced))
+                            .foregroundColor(.white.opacity(0.4))
+                    }
                 }
                 
                 Spacer()
-                
-                Text("\(Int(item.confidenceAtPrediction * 100))% conf")
-                    .font(.system(size: 10, design: .monospaced))
-                    .foregroundColor(.white.opacity(0.5))
             }
             
+            // Metadata Tags: Form, Verification Basis, Prompt SHA
+            HStack(spacing: 6) {
+                // Form Tag
+                Text(item.form.capitalized)
+                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                    .foregroundColor(.cyan)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(Color.cyan.opacity(0.12))
+                    .clipShape(Capsule())
+                
+                // Verification Basis Tag
+                let basis = VerificationBasis(rawValue: item.verificationBasis)
+                HStack(spacing: 4) {
+                    if let icon = basis?.icon {
+                        Image(systemName: icon)
+                            .font(.system(size: 9))
+                    }
+                    Text(basis?.shortName ?? item.verificationBasis)
+                }
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundColor(.amberGold)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 3)
+                .background(Color.amberGold.opacity(0.12))
+                .clipShape(Capsule())
+                
+                Spacer()
+                
+                // Prompt Version Hash Tag
+                Text("SHA: \(String(item.promptSHA256.prefix(6)))")
+                    .font(.system(size: 9, design: .monospaced))
+                    .foregroundColor(.white.opacity(0.35))
+            }
+            
+            // Optional User Notes
             if !item.userNotes.isEmpty {
                 Text(item.userNotes)
                     .font(.system(size: 12))
-                    .foregroundColor(.white.opacity(0.7))
-                    .italic()
+                    .foregroundColor(.white.opacity(0.75))
                     .padding(8)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .background(Color.white.opacity(0.03))
                     .clipShape(RoundedRectangle(cornerRadius: 8))
             }
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 6)
     }
 }

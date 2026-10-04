@@ -273,15 +273,24 @@ public struct ResultView: View {
                         }
                     }
                     
-                    // 'Not my stone' Feedback Trigger
+                    // 'Not my stone?' Easily Accessible Secondary Action
                     Button(action: { showCorrectionSheet = true }) {
-                        HStack(spacing: 6) {
-                            Image(systemName: "exclamationmark.bubble")
+                        HStack(spacing: 8) {
+                            Image(systemName: "exclamationmark.bubble.fill")
+                                .foregroundColor(.amberGold)
                             Text("Not my stone? Suggest correction")
+                                .fontWeight(.semibold)
                         }
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundColor(.white.opacity(0.6))
-                        .padding(.top, 4)
+                        .font(.system(size: 14))
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .background(Color.white.opacity(0.08))
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(Color.amberGold.opacity(0.4), lineWidth: 1)
+                        )
                     }
                 }
                 .padding(.top, 8)
@@ -307,20 +316,10 @@ public struct ResultView: View {
             PaywallView()
         }
         .sheet(isPresented: $showCorrectionSheet) {
-            NavigationStack {
-                CorrectionTriggerModalView(
-                    predictedMineral: result.topCandidate.mineralName,
-                    onSubmitted: { corrected, notes in
-                        CorrectionFeedbackService.shared.submitCorrection(
-                            photoData: scannedImage?.jpegData(compressionQuality: 0.8),
-                            predicted: result.topCandidate.mineralName,
-                            corrected: corrected,
-                            notes: notes,
-                            confidence: result.mergedConfidence
-                        )
-                    }
-                )
-            }
+            CorrectionSheetView(
+                result: result,
+                scannedImage: scannedImage
+            )
         }
     }
     

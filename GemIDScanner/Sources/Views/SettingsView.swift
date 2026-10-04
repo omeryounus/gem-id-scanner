@@ -20,6 +20,9 @@ public struct SettingsView: View {
     @State private var showClearCacheAlert = false
     @State private var showExportSheet = false
     @State private var exportedDataString: String?
+    @State private var exportZipURL: URL?
+    @State private var showZipExportSheet = false
+    @State private var syncToastMessage: String?
     @State private var cacheClearedToast = false
     
     public init() {}
@@ -115,47 +118,117 @@ public struct SettingsView: View {
                     }
                     .listRowBackground(Color.white.opacity(0.04))
                     
-                    // MARK: - Offline Corrections & AI Learning
+                    // MARK: - Beta Corrections Queue & Model Training
                     Section {
-                        NavigationLink(destination: CorrectionQueueView()) {
-                            HStack {
-                                Label {
-                                    Text("Correction Queue")
-                                        .foregroundColor(.white)
-                                } icon: {
-                                    Image(systemName: "tray.and.arrow.up.fill")
-                                        .foregroundColor(.cyan)
-                                }
-                                
-                                Spacer()
-                                
-                                if feedbackService.pendingCount > 0 {
-                                    Text("\(feedbackService.pendingCount) pending")
-                                        .font(.system(size: 11, weight: .bold, design: .monospaced))
-                                        .foregroundColor(.amberGold)
-                                        .padding(.horizontal, 8)
-                                        .padding(.vertical, 2)
-                                        .background(Color.amberGold.opacity(0.15))
-                                        .clipShape(Capsule())
+                        // Live Queue Count & Header Card
+                        HStack {
+                            Label {
+                                Text("Beta Corrections Queue")
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(.white)
+                            } icon: {
+                                Image(systemName: "tray.and.arrow.up.fill")
+                                    .foregroundColor(.amberGold)
+                            }
+                            
+                            Spacer()
+                            
+                            if feedbackService.queuedCorrections.isEmpty {
+                                Text("0 items")
+                                    .font(.system(size: 12, design: .monospaced))
+                                    .foregroundColor(.white.opacity(0.5))
+                            } else {
+                                HStack(spacing: 6) {
+                                    if feedbackService.pendingCount > 0 {
+                                        Text("\(feedbackService.pendingCount) pending")
+                                            .font(.system(size: 11, weight: .bold, design: .monospaced))
+                                            .foregroundColor(.amberGold)
+                                            .padding(.horizontal, 8)
+                                            .padding(.vertical, 3)
+                                            .background(Color.amberGold.opacity(0.18))
+                                            .clipShape(Capsule())
+                                    }
+                                    
+                                    Text("\(feedbackService.queuedCorrections.count) total")
+                                        .font(.system(size: 11, design: .monospaced))
+                                        .foregroundColor(.white.opacity(0.6))
                                 }
                             }
                         }
                         
+                        // 1-Tap Quick Action Buttons (Sync Now & Export Dataset)
+                        HStack(spacing: 10) {
+                            // 1-Tap Sync Now Button
+                            Button(action: handleSyncNow) {
+                                HStack(spacing: 6) {
+                                    if feedbackService.isSyncing {
+                                        ProgressView().tint(.white)
+                                    } else {
+                                        Image(systemName: "arrow.clockwise.icloud.fill")
+                                        Text("Sync Now")
+                                    }
+                                }
+                                .font(.system(size: 13, weight: .bold))
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 10)
+                                .background(feedbackService.pendingCount > 0 ? Color.cyan.opacity(0.3) : Color.white.opacity(0.06))
+                                .clipShape(RoundedRectangle(cornerRadius: 10))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .stroke(feedbackService.pendingCount > 0 ? Color.cyan.opacity(0.6) : Color.white.opacity(0.1), lineWidth: 1)
+                                )
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                            .disabled(feedbackService.isSyncing || feedbackService.pendingCount == 0)
+                            
+                            // 1-Tap Export Dataset Button
+                            Button(action: handleExportDataset) {
+                                HStack(spacing: 6) {
+                                    Image(systemName: "square.and.arrow.up.fill")
+                                    Text("Export Dataset")
+                                }
+                                .font(.system(size: 13, weight: .bold))
+                                .foregroundColor(.black)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 10)
+                                .background(feedbackService.queuedCorrections.isEmpty ? Color.white.opacity(0.2) : Color.amberGold)
+                                .clipShape(RoundedRectangle(cornerRadius: 10))
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                            .disabled(feedbackService.queuedCorrections.isEmpty)
+                        }
+                        .padding(.vertical, 2)
+                        
+                        // Queue Inspector Navigation Link
+                        NavigationLink(destination: CorrectionQueueView()) {
+                            HStack {
+                                Text("Inspect & Manage Feedback Queue")
+                                    .font(.system(size: 13))
+                                    .foregroundColor(.cyan)
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 11))
+                                    .foregroundColor(.white.opacity(0.4))
+                            }
+                        }
+                        
+                        // AI Model Improvement Opt-in Toggle
                         Toggle(isOn: $feedbackService.modelImprovementOptIn) {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("Contribute to AI Improvement")
                                     .font(.system(size: 14, weight: .medium))
                                     .foregroundColor(.white)
-                                Text("Shares anonymized mineral photos and diagnostic labels to refine classification models.")
+                                Text("Shares verified ground-truth labels and optical features to refine multimodal vision accuracy.")
                                     .font(.system(size: 11))
                                     .foregroundColor(.white.opacity(0.6))
                             }
                         }
                         .tint(.emeraldGreen)
                     } header: {
-                        Text("AI Continuous Learning")
+                        Text("Beta Corrections & Training Pipeline")
                     } footer: {
-                        Text("No personal identifiers or location coordinates are ever attached to model improvement telemetry.")
+                        Text("Dataset export includes structured JSON metadata with pred_1..pred_3 probabilities, prompt SHA-256 (\(String(GeminiVisionService.promptSHA256.prefix(8)))), verification basis, and full-resolution specimen JPEG images.")
                             .font(.system(size: 11))
                             .foregroundColor(.white.opacity(0.4))
                     }
@@ -278,6 +351,11 @@ public struct SettingsView: View {
                     ShareActivitySheet(activityItems: [text])
                 }
             }
+            .sheet(isPresented: $showZipExportSheet) {
+                if let url = exportZipURL {
+                    ShareActivitySheet(activityItems: [url])
+                }
+            }
             .alert("Clear Local Image Cache?", isPresented: $showClearCacheAlert) {
                 Button("Clear Cache", role: .destructive) {
                     URLCache.shared.removeAllCachedResponses()
@@ -295,6 +373,45 @@ public struct SettingsView: View {
             } message: {
                 Text("This clears temporary download caches and optimizes device storage. Your saved specimen vault will not be affected.")
             }
+            .overlay(alignment: .bottom) {
+                if let toast = syncToastMessage {
+                    HStack(spacing: 8) {
+                        Image(systemName: "checkmark.seal.fill")
+                            .foregroundColor(.emeraldGreen)
+                        Text(toast)
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundColor(.white)
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .background(Color(red: 0.12, green: 0.14, blue: 0.20))
+                    .clipShape(Capsule())
+                    .overlay(Capsule().stroke(Color.emeraldGreen.opacity(0.4), lineWidth: 1))
+                    .shadow(radius: 10)
+                    .padding(.bottom, 24)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
+            }
+        }
+    }
+    
+    private func handleSyncNow() {
+        Task {
+            let result = await feedbackService.syncPendingCorrections()
+            withAnimation {
+                syncToastMessage = "Synced \(result.synced) correction\(result.synced == 1 ? "" : "s") successfully!"
+            }
+            try? await Task.sleep(nanoseconds: 2_500_000_000)
+            withAnimation {
+                syncToastMessage = nil
+            }
+        }
+    }
+    
+    private func handleExportDataset() {
+        if let zipURL = feedbackService.exportCorrectionsDatasetZip() {
+            self.exportZipURL = zipURL
+            self.showZipExportSheet = true
         }
     }
     
