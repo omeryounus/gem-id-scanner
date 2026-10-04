@@ -1,0 +1,101 @@
+photo_id,specimen_id,label,label_basis,form,source_rights,pred_1,pred_2,pred_3,conf_1,result,twin_named,error_cause,notes
+A-001,SPEC-001,Clear Quartz,hardness_test,rough,own_specimen,,,,,,,,Tier A Quartz family - hexagonal prismatic crystal with striations
+A-002,SPEC-002,Amethyst,uv_test,cluster,own_specimen,,,,,,,,Tier A Quartz family - violet crystal cluster in basalt matrix
+A-003,SPEC-003,Citrine,hardness_test,rough,own_specimen,,,,,,,,Tier A Quartz family - natural pale yellow crystal point
+A-004,SPEC-004,Rose Quartz,hardness_test,rough,own_specimen,,,,,,,,Tier A Quartz family - translucent pink massive specimen
+A-005,SPEC-005,Smoky Quartz,hardness_test,rough,own_specimen,,,,,,,,Tier A Quartz family - dark brown-grey translucent prism
+A-006,SPEC-006,Milky Quartz,hardness_test,tumbled,own_specimen,,,,,,,,Tier A Quartz family - opaque white tumbled pebble
+A-007,SPEC-007,Aventurine,dealer_label,cabochon,licensed_set,,,,,,,,Tier A Quartz family - green aventurine with mica platelets
+A-008,SPEC-008,Carnelian,dealer_label,tumbled,own_specimen,,,,,,,,Tier A Quartz family - translucent orange-red chalcedony
+A-009,SPEC-009,Agate,dealer_label,cabochon,own_specimen,,,,,,,,Tier A Everyday finds - concentric banded chalcedony slab
+A-010,SPEC-010,Banded Agate,dealer_label,tumbled,own_specimen,,,,,,,,Tier A Everyday finds - fine parallel banding
+A-011,SPEC-011,Jasper,dealer_label,rough,own_specimen,,,,,,,,Tier A Everyday finds - opaque microcrystalline quartz
+A-012,SPEC-012,Red Jasper,hardness_test,tumbled,own_specimen,,,,,,,,Tier A Everyday finds - brick red opaque tumbled stone
+A-013,SPEC-013,Calcite,hardness_test,rough,own_specimen,,,,,,,,"Tier A Everyday finds - rhombohedral cleavage, acid reactive"
+A-014,SPEC-014,Orange Calcite,uv_test,rough,own_specimen,,,,,,,,Tier A Everyday finds - translucent orange sub-vitreous block
+A-015,SPEC-015,Fluorite,uv_test,rough,own_specimen,,,,,,,,"Tier A Everyday finds - cubic habit, strong blue/purple UV fluorescence"
+A-016,SPEC-016,Pyrite,hardness_test,rough,own_specimen,,,,,,,,Tier A Everyday finds - brass-yellow metallic cubic cluster
+A-017,SPEC-017,Hematite,hardness_test,tumbled,own_specimen,,,,,,,,Tier A Everyday finds - metallic silver with reddish-brown streak
+A-018,SPEC-018,Magnetite,hardness_test,rough,own_specimen,,,,,,,,"Tier A Everyday finds - black metallic octahedron, strongly magnetic"
+A-019,SPEC-019,Obsidian,hardness_test,rough,own_specimen,,,,,,,,"Tier A Everyday finds - vitreous black volcanic glass, conchoidal fracture"
+A-020,SPEC-020,Snowflake Obsidian,dealer_label,tumbled,own_specimen,,,,,,,,Tier A Everyday finds - black glass with white cristobalite spherulites
+A-021,SPEC-021,Sodalite,hardness_test,tumbled,own_specimen,,,,,,,,"Tier A Everyday finds - royal blue with white calcite veins, no pyrite"
+A-022,SPEC-022,Tiger's Eye,dealer_label,cabochon,own_specimen,,,,,,,,Tier A Everyday finds - golden-brown chatoyant fibrous quartz
+A-023,SPEC-023,Emerald,expert_named,rough,licensed_set,,,,,,,,Tier A Collector staples - beryl hexagonal prism in mica schist matrix
+A-024,SPEC-024,Ruby,uv_test,rough,licensed_set,,,,,,,,"Tier A Collector staples - corundum barrel crystal, crimson under UV"
+A-025,SPEC-025,Sapphire,hardness_test,rough,licensed_set,,,,,,,,Tier A Collector staples - blue corundum crystal with basal parting
+A-026,SPEC-026,Blue Sapphire,expert_named,cut,licensed_set,,,,,,,,Tier A Collector staples - faceted rich royal blue corundum
+A-027,SPEC-027,Labradorite,dealer_label,cabochon,own_specimen,,,,,,,,Tier A Collector staples - grey plagioclase with peacock blue/green flash
+A-028,SPEC-028,Moonstone,dealer_label,cabochon,own_specimen,,,,,,,,Tier A Collector staples - orthoclase feldspar with blue-white adularescence
+A-029,SPEC-029,Rainbow Moonstone,dealer_label,cabochon,own_specimen,,,,,,,,Tier A Collector staples - white labradorite with multi-color optical flash
+A-030,SPEC-030,Malachite,hardness_test,cabochon,own_specimen,,,,,,,,Tier A Collector staples - concentric green botryoidal banding
+A-031,SPEC-031,Turquoise,expert_named,cabochon,licensed_set,,,,,,,,Tier A Collector staples - sky blue copper phosphate with dark webbed matrix
+A-032,SPEC-032,Lapis Lazuli,dealer_label,cabochon,own_specimen,,,,,,,,Tier A Collector staples - deep royal blue with brassy pyrite specks
+A-033,SPEC-033,Opal,expert_named,cabochon,licensed_set,,,,,,,,Tier A Collector staples - precious opal showing spectral play-of-color
+A-034,SPEC-034,White Opal,dealer_label,cabochon,licensed_set,,,,,,,,Tier A Collector staples - translucent white base with rainbow pinfire flash
+A-035,SPEC-035,Garnet,hardness_test,rough,own_specimen,,,,,,,,Tier A Collector staples - dodecahedral dark red-brown crystal
+A-036,SPEC-036,Almandine Garnet,hardness_test,cut,licensed_set,,,,,,,,Tier A Collector staples - deep brownish-red faceted garnet
+A-037,SPEC-037,Azurite,dealer_label,rough,shop_permission,,,,,,,,Tier A Collector staples - deep azure blue monoclinic crystal crust
+A-038,SPEC-038,Rhodochrosite,hardness_test,cabochon,shop_permission,,,,,,,,Tier A Collector staples - rose-pink manganese carbonate with zig-zag banding
+A-039,SPEC-039,Peridot,dealer_label,rough,own_specimen,,,,,,,,Tier A Shop regulars - olive green forsterite olivine in basalt
+A-040,SPEC-040,Topaz,hardness_test,rough,licensed_set,,,,,,,,Tier A Shop regulars - orthorhombic prism with perfect basal cleavage
+A-041,SPEC-041,Imperial Topaz,expert_named,cut,licensed_set,,,,,,,,Tier A Shop regulars - golden sherry-orange faceted gemstone
+A-042,SPEC-042,Tourmaline,hardness_test,rough,own_specimen,,,,,,,,Tier A Shop regulars - rounded triangular prismatic crystal with striations
+A-043,SPEC-043,Black Tourmaline,hardness_test,rough,own_specimen,,,,,,,,"Tier A Shop regulars - schorl columnar prism, vertical striations"
+A-044,SPEC-044,Watermelon Tourmaline,dealer_label,cut,licensed_set,,,,,,,,Tier A Shop regulars - green rim with pink rubellite core slice
+A-045,SPEC-045,Aquamarine,hardness_test,rough,licensed_set,,,,,,,,Tier A Shop regulars - pale blue-green hexagonal beryl prism
+A-046,SPEC-046,Amazonite,dealer_label,tumbled,own_specimen,,,,,,,,Tier A Shop regulars - blue-green microcline feldspar with grid perthite
+A-047,SPEC-047,Chrysocolla,dealer_label,rough,shop_permission,,,,,,,,Tier A Shop regulars - cyan-blue copper phyllosilicate botryoidal crust
+A-048,SPEC-048,Howlite,uv_test,tumbled,own_specimen,,,,,,,,Tier A Shop regulars - opaque white borate with dark grey/black veining
+A-049,SPEC-049,Onyx,dealer_label,cabochon,own_specimen,,,,,,,,Tier A Shop regulars - solid jet black parallel-banded chalcedony
+A-050,SPEC-050,Jade (Nephrite),hardness_test,cabochon,licensed_set,,,,,,,,Tier A Shop regulars - spinach green fibrous tremolite-actinolite
+A-051,SPEC-051,Sunstone,dealer_label,cabochon,own_specimen,,,,,,,,Tier A Colour and flash - aventurescent feldspar with copper hematite glitter
+A-052,SPEC-052,Kyanite,hardness_test,rough,own_specimen,,,,,,,,Tier A Colour and flash - bladed blue triclinic crystals with anisotropic hardness
+A-053,SPEC-053,Apatite,hardness_test,rough,own_specimen,,,,,,,,"Tier A Colour and flash - neon teal-blue hexagonal prism, Mohs 5"
+A-054,SPEC-054,Rhodonite,dealer_label,tumbled,own_specimen,,,,,,,,Tier A Colour and flash - rose pink silicate with black manganese oxide dendrites
+A-055,SPEC-055,Unakite,dealer_label,tumbled,own_specimen,,,,,,,,"Tier A Colour and flash - mottled green epidote, pink orthoclase, clear quartz"
+A-056,SPEC-056,Dalmatian Jasper,dealer_label,tumbled,own_specimen,,,,,,,,Tier A Colour and flash - cream aplite with black arfvedsonite spots
+A-057,SPEC-057,Picture Jasper,dealer_label,cabochon,own_specimen,,,,,,,,Tier A Colour and flash - tan/brown dendritic landscape banding
+A-058,SPEC-058,Moss Agate,dealer_label,cabochon,own_specimen,,,,,,,,Tier A Colour and flash - translucent chalcedony with green hornblende dendrites
+A-059,SPEC-059,Fire Agate,dealer_label,cabochon,licensed_set,,,,,,,,Tier A Colour and flash - botryoidal limonite iridescence in chalcedony
+A-060,SPEC-060,Charoite,dealer_label,cabochon,shop_permission,,,,,,,,Tier A Colour and flash - swirling fibrous lavender-purple silicate
+B-001,SPEC-001,Clear Quartz,hardness_test,rough,own_specimen,,,,,,,,"Tier B Field shot - mixed shop lighting, fingers holding stone"
+B-002,SPEC-002,Amethyst,uv_test,cluster,own_specimen,,,,,,,,Tier B Field shot - dimly lit tabletop display
+B-003,SPEC-003,Citrine,hardness_test,tumbled,own_specimen,,,,,,,,Tier B Field shot - tumbled stone on wooden desk with glare
+B-004,SPEC-004,Rose Quartz,hardness_test,tumbled,own_specimen,,,,,,,,Tier B Field shot - handheld outdoor daylight with slight motion
+B-005,SPEC-005,Smoky Quartz,hardness_test,rough,own_specimen,,,,,,,,Tier B Field shot - warm tungsten incandescent lamp lighting
+B-006,SPEC-006,Milky Quartz,hardness_test,tumbled,own_specimen,,,,,,,,Tier B Field shot - garden gravel background
+B-007,SPEC-007,Aventurine,dealer_label,tumbled,licensed_set,,,,,,,,Tier B Field shot - busy countertop background
+B-008,SPEC-008,Carnelian,dealer_label,tumbled,own_specimen,,,,,,,,Tier B Field shot - multiple pebbles in dealer display tray
+B-009,SPEC-009,Agate,dealer_label,tumbled,own_specimen,,,,,,,,Tier B Field shot - mixed rock tumbler batch shot
+B-010,SPEC-010,Banded Agate,dealer_label,cabochon,own_specimen,,,,,,,,Tier B Field shot - ring jewelry setting with side shadows
+B-011,SPEC-011,Jasper,dealer_label,rough,own_specimen,,,,,,,,Tier B Field shot - dusty unwashed field sample
+B-012,SPEC-012,Red Jasper,hardness_test,tumbled,own_specimen,,,,,,,,"Tier B Field shot - indoor warm LED lamp, angled perspective"
+B-013,SPEC-013,Calcite,hardness_test,rough,own_specimen,,,,,,,,Tier B Field shot - dealer shelf with glare on cleavage plane
+B-014,SPEC-014,Orange Calcite,uv_test,rough,own_specimen,,,,,,,,Tier B Field shot - kitchen table surface with household clutter
+B-015,SPEC-015,Fluorite,uv_test,rough,own_specimen,,,,,,,,Tier B Field shot - backlit window silhouette
+B-016,SPEC-016,Pyrite,hardness_test,rough,own_specimen,,,,,,,,Tier B Field shot - harsh smartphone camera flash with glare
+B-017,SPEC-017,Hematite,hardness_test,tumbled,own_specimen,,,,,,,,Tier B Field shot - reflective metallic surface causing phone mirror image
+B-018,SPEC-018,Magnetite,hardness_test,rough,own_specimen,,,,,,,,Tier B Field shot - dark specimen on dark desk surface
+B-019,SPEC-019,Obsidian,hardness_test,rough,own_specimen,,,,,,,,Tier B Field shot - black background with high contrast reflections
+B-020,SPEC-020,Snowflake Obsidian,dealer_label,tumbled,own_specimen,,,,,,,,Tier B Field shot - palm of hand with finger scale
+B-021,SPEC-021,Sodalite,hardness_test,tumbled,own_specimen,,,,,,,,Tier B Field shot - shop tray alongside lapis lazuli
+B-022,SPEC-022,Tiger's Eye,dealer_label,cabochon,own_specimen,,,,,,,,Tier B Field shot - angled lighting catching partial chatoyancy
+B-023,SPEC-023,Emerald,expert_named,cut,licensed_set,,,,,,,,Tier B Field shot - ring setting with prong shadow and reflection
+B-024,SPEC-024,Ruby,uv_test,rough,licensed_set,,,,,,,,Tier B Field shot - small grain in matrix under fluorescent shop tube
+B-025,SPEC-025,Sapphire,hardness_test,rough,licensed_set,,,,,,,,Tier B Field shot - dark alluvial pebble in hand
+B-026,SPEC-026,Blue Sapphire,expert_named,cut,licensed_set,,,,,,,,Tier B Field shot - pendant setting with reflection
+B-027,SPEC-027,Labradorite,dealer_label,cabochon,own_specimen,,,,,,,,Tier B Field shot - off-angle shot where flash is only partially visible
+B-028,SPEC-028,Moonstone,dealer_label,cabochon,own_specimen,,,,,,,,Tier B Field shot - direct overhead flash washing out sheen
+B-029,SPEC-029,Rainbow Moonstone,dealer_label,cabochon,own_specimen,,,,,,,,Tier B Field shot - jewelry tray with surrounding silver rings
+B-030,SPEC-030,Malachite,hardness_test,tumbled,own_specimen,,,,,,,,Tier B Field shot - palm held with slight motion blur
+B-031,SPEC-031,Turquoise,expert_named,cabochon,licensed_set,,,,,,,,Tier B Field shot - native jewelry inlay with silver background
+B-032,SPEC-032,Lapis Lazuli,dealer_label,tumbled,own_specimen,,,,,,,,Tier B Field shot - shop counter under mixed cool/warm light
+B-033,SPEC-033,Opal,expert_named,rough,licensed_set,,,,,,,,Tier B Field shot - rough boulder opal in ironstone under sunlight
+B-034,SPEC-034,White Opal,dealer_label,cabochon,licensed_set,,,,,,,,Tier B Field shot - white tray causing contrast loss
+B-035,SPEC-035,Garnet,hardness_test,rough,own_specimen,,,,,,,,Tier B Field shot - dark pebbles in stream gravel pan
+B-036,SPEC-036,Almandine Garnet,hardness_test,rough,licensed_set,,,,,,,,Tier B Field shot - rough crystal in matrix with shadow
+B-037,SPEC-037,Azurite,dealer_label,rough,shop_permission,,,,,,,,Tier B Field shot - blue crust on green malachite rock
+B-038,SPEC-038,Rhodochrosite,hardness_test,rough,shop_permission,,,,,,,,Tier B Field shot - raw stalactitic slice under shop showcase light
+B-039,SPEC-039,Peridot,dealer_label,tumbled,own_specimen,,,,,,,,Tier B Field shot - small tumbled chip in palm
+B-040,SPEC-040,Topaz,hardness_test,rough,licensed_set,,,,,,,,Tier B Field shot - pale rough crystal on cloth surface

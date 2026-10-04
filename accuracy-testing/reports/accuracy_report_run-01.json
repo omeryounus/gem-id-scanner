@@ -1,0 +1,77 @@
+{
+  "run_id": "run-01",
+  "timestamp": "2026-10-04 14:24:44Z",
+  "model": "gemini-1.5-flash",
+  "verdict": "PASS",
+  "verdict_rationale": [
+    "All Tier A and Tier B accuracy bars met.",
+    "Confidence calibration bands are verified honest (Confirmed >=85%).",
+    "Lookalike twin warning rate meets >=80% spec.",
+    "Confident wrong answers within tolerance (0 <= 2)."
+  ],
+  "metrics": {
+    "tier_a": {
+      "total": 60,
+      "top1_count": 50,
+      "top1_pct": 83.3,
+      "top3_count": 57,
+      "top3_pct": 95.0,
+      "family_count": 0,
+      "family_pct": 0.0,
+      "miss_count": 3,
+      "miss_pct": 5.0
+    },
+    "tier_b": {
+      "total": 40,
+      "top1_count": 29,
+      "top1_pct": 72.5,
+      "top3_count": 38,
+      "top3_pct": 95.0,
+      "family_count": 0,
+      "family_pct": 0.0,
+      "miss_count": 2,
+      "miss_pct": 5.0
+    },
+    "all": {
+      "total": 100,
+      "top1_count": 79,
+      "top1_pct": 79.0,
+      "top3_count": 95,
+      "top3_pct": 95.0,
+      "family_count": 0,
+      "family_pct": 0.0,
+      "miss_count": 5,
+      "miss_pct": 5.0
+    },
+    "calibration": {
+      "confirmed": {
+        "count": 59,
+        "top1_accuracy": 100.0,
+        "top3_accuracy": 100.0
+      },
+      "likely": {
+        "count": 39,
+        "top1_accuracy": 51.3,
+        "top3_accuracy": 87.2
+      },
+      "best_guesses": {
+        "count": 2,
+        "top1_accuracy": 0.0,
+        "top3_accuracy": 100.0
+      }
+    },
+    "lookalike_twin_rate": 100.0,
+    "lookalike_twin_hits": 87,
+    "lookalike_eligible_count": 87,
+    "confident_wrong_count": 0,
+    "confident_wrong_samples": [],
+    "error_taxonomy": {
+      "Knowledge gap": 3,
+      "Ranking error": 16,
+      "Photo problem": 2,
+      "Calibration error": 0,
+      "Label doubt": 0
+    },
+    "flagged_minerals": []
+  }
+}
