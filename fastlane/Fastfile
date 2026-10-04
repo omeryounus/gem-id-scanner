@@ -1,0 +1,194 @@
+# frozen_string_literal: true
+
+opt_out_usage
+default_platform(:ios)
+
+platform :ios do
+  desc "Load App Store Connect API key from environment or local key store"
+  def load_api_key
+    key_id = ENV["APPSTORE_API_KEY_ID"] || ENV["APP_STORE_CONNECT_API_KEY_KEY_ID"] || ENV["APP_STORE_CONNECT_API_KEY_ID"]
+    issuer_id = ENV["APPSTORE_API_ISSUER_ID"] || ENV["APP_STORE_CONNECT_API_KEY_ISSUER_ID"] || ENV["APP_STORE_CONNECT_ISSUER_ID"]
+    key_base64 = ENV["APPSTORE_API_KEY_BASE64"] || ENV["APP_STORE_CONNECT_API_KEY_KEY"]
+    key_filepath = ENV["APP_STORE_CONNECT_API_KEY_KEY_FILEPATH"]
+
+    unless key_id && issuer_id
+      UI.user_error!("Missing APPSTORE_API_KEY_ID or APPSTORE_API_ISSUER_ID environment variables.")
+    end
+
+    if key_base64 && !key_base64.strip.empty?
+      app_store_connect_api_key(
+        key_id: key_id.strip,
+        issuer_id: issuer_id.strip,
+        key_content: key_base64.strip,
+        is_key_content_base64: true,
+        duration: 1200,
+        in_house: false
+      )
+    elsif key_filepath && File.exist?(key_filepath)
+      app_store_connect_api_key(
+        key_id: key_id.strip,
+        issuer_id: issuer_id.strip,
+        key_filepath: key_filepath,
+        duration: 1200,
+        in_house: false
+      )
+    else
+      default_path = File.expand_path("~/.appstoreconnect/private_keys/AuthKey_#{key_id}.p8")
+      if File.exist?(default_path)
+        app_store_connect_api_key(
+          key_id: key_id.strip,
+          issuer_id: issuer_id.strip,
+          key_filepath: default_path,
+          duration: 1200,
+          in_house: false
+        )
+      else
+        UI.user_error!("No App Store Connect API key found. Provide APPSTORE_API_KEY_BASE64 or key filepath at #{default_path}")
+      end
+    end
+  end
+
+  desc "Ensure Bundle ID and App Store Connect app record exist via Connect API"
+  lane :ensure_app do
+    api_key = load_api_key
+    app_id = ENV.fetch("APP_IDENTIFIER", "com.omeryounus.gemidscanner")
+    app_name = ENV.fetch("APP_NAME", "Gem ID Scanner")
+    sku = ENV.fetch("APP_SKU", "gem-id-scanner-001")
+
+    token = Spaceship::ConnectAPI::Token.create(
+      key_id: api_key[:key_id],
+      issuer_id: api_key[:issuer_id],
+      filepath: api_key[:key_filepath] || ENV["APP_STORE_CONNECT_API_KEY_KEY_FILEPATH"],
+      key: api_key[:key]
+    )
+    Spaceship::ConnectAPI.token = token
+
+    # Check / create Bundle ID on Apple Developer Portal
+    bundle = Spaceship::ConnectAPI::BundleId.all.find { |b| b.identifier == app_id }
+    if bundle.nil?
+      UI.message("Creating Bundle ID #{app_id}…")
+      bundle = Spaceship::ConnectAPI::BundleId.create(
+        name: app_name.gsub(/[^0-9A-Za-z ]/, "")[0, 30],
+        identifier: app_id,
+        platform: Spaceship::ConnectAPI::BundleIdPlatform::IOS
+      )
+      UI.success("Created Bundle ID: #{bundle.identifier} (id: #{bundle.id})")
+    else
+      UI.success("Bundle ID already exists: #{bundle.identifier} (id: #{bundle.id})")
+    end
+
+    # Check / create ASC App Record
+    app = Spaceship::ConnectAPI::App.find(app_id)
+    if app.nil?
+      UI.message("ASC app record missing — creating app #{app_name} (SKU: #{sku})…")
+      created = false
+      begin
+        app = Spaceship::ConnectAPI::App.create(
+          name: app_name,
+          version_string: "1.0.0",
+          sku: sku,
+          primary_locale: "en-US",
+          bundle_id_id: bundle.id,
+          platforms: ["IOS"]
+        )
+        created = true
+      rescue => e1
+        UI.important("App.create with bundle_id_id failed: #{e1.message}, trying bundle_id string...")
+        begin
+          app = Spaceship::ConnectAPI::App.create(
+            name: app_name,
+            version_string: "1.0.0",
+            sku: sku,
+            primary_locale: "en-US",
+            bundle_id: app_id,
+            platforms: ["IOS"]
+          )
+          created = true
+        rescue => e2
+          UI.important("App.create with bundle_id failed: #{e2.message}")
+        end
+      end
+
+      app = Spaceship::ConnectAPI::App.find(app_id) if created
+      if app.nil?
+        UI.important("⚠️  ASC app for #{app_id} could not be created automatically.")
+        UI.important("If your API key lacks Admin rights, create it manually: App Store Connect → My Apps → +")
+        UI.important("  Platform: iOS | Name: #{app_name} | Bundle ID: #{app_id} | SKU: #{sku}")
+      else
+        UI.success("Created ASC App record: #{app.name} (#{app.id})")
+      end
+    else
+      UI.success("ASC App record already exists: #{app.name} (#{app.id})")
+    end
+
+    app
+  end
+
+  desc "Build Gem ID Scanner IPA"
+  lane :build_app do |options|
+    scheme = options[:scheme] || "GemIDScanner"
+    project = options[:project] || "GemIDScanner.xcodeproj"
+    output_dir = options[:output_dir] || "./build"
+    app_id = ENV.fetch("APP_IDENTIFIER", "com.omeryounus.gemidscanner")
+    team_id = ENV.fetch("APPLE_TEAM_ID", "Z2RB57KVQ5")
+
+    gym(
+      scheme: scheme,
+      project: project,
+      output_directory: output_dir,
+      output_name: "GemIDScanner.ipa",
+      export_method: "app-store",
+      export_options: {
+        method: "app-store",
+        teamID: team_id,
+        signingStyle: "manual",
+        signingCertificate: "Apple Distribution",
+        provisioningProfiles: {
+          app_id => "GemIDScanner_AppStore"
+        }
+      },
+      clean: true,
+      skip_package_dependencies_resolution: true
+    )
+  end
+
+  desc "Build and upload Gem ID Scanner to TestFlight with changelog"
+  lane :beta do |options|
+    api_key = load_api_key
+    app_id = ENV.fetch("APP_IDENTIFIER", "com.omeryounus.gemidscanner")
+    team_id = ENV.fetch("APPLE_TEAM_ID", "Z2RB57KVQ5")
+    changelog = options[:changelog] || ENV["CHANGELOG"] || "Automated TestFlight release for Gem ID Scanner"
+
+    # 1. Ensure Bundle ID and ASC App
+    ensure_app
+
+    # 2. Fetch or create App Store Provisioning Profile
+    profile_path = sigh(
+      api_key: api_key,
+      app_identifier: app_id,
+      team_id: team_id,
+      filename: "GemIDScanner_AppStore.mobileprovision",
+      output_path: "build",
+      force: true,
+      platform: "ios",
+      skip_certificate_verification: true
+    )
+    UI.success("Provisioning profile ready: #{profile_path}")
+
+    # 3. Build IPA
+    build_app(
+      scheme: "GemIDScanner",
+      project: "GemIDScanner.xcodeproj",
+      output_dir: "build/ipa"
+    )
+
+    # 4. Upload to TestFlight
+    upload_to_testflight(
+      api_key: api_key,
+      app_identifier: app_id,
+      skip_waiting_for_build_processing: true,
+      changelog: changelog
+    )
+    UI.success("Successfully uploaded Gem ID Scanner to TestFlight!")
+  end
+end

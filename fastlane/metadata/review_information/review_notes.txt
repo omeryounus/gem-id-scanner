@@ -1,0 +1,12 @@
+App Review Notes for Gem ID Scanner:
+
+1. CAMERA & PHOTO ACCESS:
+The app uses the camera to scan gemstones and minerals for real-time optical identification. You can grant camera permissions and point at any mineral, rock, or crystal to test identification. Sample photos are also available from the photo library import button.
+
+2. IN-APP PURCHASES:
+StoreKit 2 in-app purchases are enabled for Pro access. All subscription options (Monthly, Annual with 3-day trial, Lifetime) can be tested using StoreKit Sandbox / Test accounts or StoreKit configuration. Free users receive 3 complimentary scans daily.
+
+3. OFFLINE CAPABILITY:
+Stage 1 optical classification runs completely on-device without network connectivity. Stage 2 cloud verification activates when online to perform deep optical cross-referencing.
+
+Contact: Omer Younus ($APP_REVIEW_EMAIL)

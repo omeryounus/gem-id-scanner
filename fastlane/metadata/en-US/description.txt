@@ -1,0 +1,39 @@
+Identify any gemstone, crystal, mineral, or rock in seconds with Gem ID Scanner—the AI gemological identifier built for rockhounds, crystal collectors, geologists, and jewelry enthusiasts.
+
+Powered by a dual-stage identification engine combining high-speed on-device computer vision and advanced multimodal AI, Gem ID Scanner analyzes optical luster, crystal habit, cleavage planes, and fracture patterns to deliver accurate classifications and separate difficult lookalike twins.
+
+KEY FEATURES:
+
+◆ DUAL-STAGE AI OPTICAL IDENTIFICATION
+Snap a photo or import from your library. Our stage-1 neural network shortlists candidates instantly, while our stage-2 geological vision model examines fine surface phenomena—including labradorescence, chatoyancy, adularescence, and internal inclusions.
+
+◆ LOOKALIKE SEPARATION & TWIN DISAMBIGUATION
+Never confuse Citrine with Heat-Treated Amethyst, Clear Quartz with Glass, or Turquoise with Dyed Howlite again. Gem ID Scanner highlights distinguishing optical tests and physical differentiators for every lookalike pair.
+
+◆ COMPREHENSIVE GEMOLOGICAL DATABASE
+Explore detailed profiles for over 300+ minerals and gemstones, including:
+• Chemical Formula & Crystal System
+• Mohs Hardness Scale & Tenacity
+• Luster, Transparency & Streak Color
+• Cleavage, Fracture & Specific Gravity
+• Refractive Index & Birefringence
+• Primary Global Localities & Geological Formations
+• Metaphysical, Astrological & Birthstone Lore
+
+◆ PERSONAL SPECIMEN COLLECTION LOG
+Catalog your growing mineral collection. Save high-resolution photos, acquisition dates, purchase prices, locations found, and personal field notes. Filter by crystal family, rarity, or hardness.
+
+◆ EXPORTABLE SPECIMEN CARDS
+Generate aesthetic, shareable gemological identification cards for your specimens to share on social media or print for display cases.
+
+◆ PRIVACY-FIRST & OFFLINE READY
+Your collection data is stored securely on your device with SwiftData and private iCloud sync. Core identification features remain accessible even without an internet connection in the field.
+
+SUBSCRIPTION & IN-APP PURCHASES:
+• Gem ID Scanner Pro Monthly: $4.99/mo (Unlimited scans, full gemological database, specimen export)
+• Gem ID Scanner Pro Annual: $29.99/yr (Best Value with 3-day free trial)
+• Gem ID Scanner Lifetime Pass: $69.99 one-time payment
+
+Privacy Policy: https://omeryounus.com/gem-id-scanner/privacy
+Terms of Use (EULA): https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
+Support: https://omeryounus.com/gem-id-scanner/support

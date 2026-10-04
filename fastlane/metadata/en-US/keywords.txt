@@ -1,0 +1,1 @@
+gem,rock,crystal,mineral,gemstone,identifier,geology,geode,stone,scanner,mohs,birthstone,rocks,crystals
