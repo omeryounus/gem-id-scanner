@@ -1,7 +1,10 @@
 {
   "run_id": "run-02",
-  "timestamp": "2026-10-04 14:35:46Z",
+  "timestamp": "2026-10-04 14:45:27Z",
   "model": "gemini-1.5-flash",
+  "prompt_name": "run-02-prompt.txt",
+  "prompt_path": "accuracy-testing/prompts/run-02-prompt.txt",
+  "prompt_sha256": "8bd79862a603ba7f1cf1805c672eb02d47b0313a7424c908718a762b41219f39",
   "verdict": "PASS",
   "verdict_rationale": [
     "All Tier A and Tier B accuracy bars met.",
@@ -23,8 +26,8 @@
     },
     "tier_b": {
       "total": 40,
-      "top1_count": 29,
-      "top1_pct": 72.5,
+      "top1_count": 28,
+      "top1_pct": 70.0,
       "top3_count": 38,
       "top3_pct": 95.0,
       "family_count": 0,
@@ -34,8 +37,8 @@
     },
     "all": {
       "total": 100,
-      "top1_count": 79,
-      "top1_pct": 79.0,
+      "top1_count": 78,
+      "top1_pct": 78.0,
       "top3_count": 95,
       "top3_pct": 95.0,
       "family_count": 0,
@@ -51,7 +54,7 @@
       },
       "likely": {
         "count": 39,
-        "top1_accuracy": 51.3,
+        "top1_accuracy": 48.7,
         "top3_accuracy": 87.2
       },
       "best_guesses": {
@@ -123,7 +126,7 @@
     "confident_wrong_samples": [],
     "error_taxonomy": {
       "Knowledge gap": 3,
-      "Ranking error": 16,
+      "Ranking error": 17,
       "Photo problem": 2,
       "Calibration error": 0,
       "Label doubt": 0

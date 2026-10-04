@@ -1,3 +1,6 @@
+# prompt_name: run-02-prompt.txt
+# prompt_path: accuracy-testing/prompts/run-02-prompt.txt
+# prompt_sha256: 8bd79862a603ba7f1cf1805c672eb02d47b0313a7424c908718a762b41219f39
 photo_id,specimen_id,label,label_basis,form,source_rights,pred_1,conf_1,pred_2,conf_2,pred_3,conf_3,result,twin_named,error_cause,notes
 A-001,SPEC-001,Clear Quartz,hardness_test,rough,own_specimen,Clear Quartz,0.88,Glass,0.04,Optical Glass,0.08,top1,yes,,Tier A Quartz family - hexagonal prismatic crystal with striations
 A-002,SPEC-002,Amethyst,uv_test,cluster,own_specimen,Amethyst,0.90,Purple Fluorite,0.05,Fluorite,0.04,top1,yes,,Tier A Quartz family - violet crystal cluster in basalt matrix
@@ -74,7 +77,7 @@ B-012,SPEC-012,Red Jasper,hardness_test,tumbled,own_specimen,Red Jasper,0.83,Cal
 B-013,SPEC-013,Calcite,hardness_test,rough,own_specimen,Calcite,0.73,Calcite,0.09,Quartz,0.18,top1,yes,,Tier B Field shot - dealer shelf with glare on cleavage plane
 B-014,SPEC-014,Orange Calcite,uv_test,rough,own_specimen,Orange Calcite,0.88,Calcite,0.17,Quartz,0.01,top1,yes,,Tier B Field shot - kitchen table surface with household clutter
 B-015,SPEC-015,Fluorite,uv_test,rough,own_specimen,Fluorite,0.80,Amethyst,0.12,Calcite,0.08,top1,yes,,Tier B Field shot - backlit window silhouette
-B-016,SPEC-016,Pyrite,hardness_test,rough,own_specimen,Chalcopyrite,0.59,Pyrite,0.25,Jasper,0.16,top1,yes,,Tier B Field shot - harsh smartphone camera flash with glare
+B-016,SPEC-016,Pyrite,hardness_test,rough,own_specimen,Chalcopyrite,0.59,Pyrite,0.25,Jasper,0.16,top3,yes,Ranking error,Tier B Field shot - harsh smartphone camera flash with glare
 B-017,SPEC-017,Hematite,hardness_test,tumbled,own_specimen,Magnetite,0.72,Hematite,0.29,Jasper,0.01,top3,yes,Ranking error,Tier B Field shot - reflective metallic surface causing phone mirror image
 B-018,SPEC-018,Magnetite,hardness_test,rough,own_specimen,Magnetite,0.81,Hematite,0.18,Franklinite,0.01,top1,yes,,Tier B Field shot - dark specimen on dark desk surface
 B-019,SPEC-019,Obsidian,hardness_test,rough,own_specimen,Black Tourmaline,0.65,Obsidian,0.20,Jasper,0.15,top3,yes,Ranking error,Tier B Field shot - black background with high contrast reflections

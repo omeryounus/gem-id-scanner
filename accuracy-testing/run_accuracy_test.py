@@ -17,6 +17,7 @@ import csv
 import time
 import argparse
 import base64
+import hashlib
 import urllib.request
 import urllib.error
 from datetime import datetime, timezone
@@ -208,16 +209,34 @@ SYNONYMS: Dict[str, str] = {
 
 
 def normalize_mineral_name(name: str) -> str:
-    """Normalize mineral name for robust evaluation comparison."""
+    """Normalize mineral name for robust deterministic comparison."""
     if not name:
         return ""
-    clean = name.strip().lower()
+    clean = name.strip().lower().replace("_", " ").replace("-", " ")
     # Remove common qualifiers
-    clean = clean.replace("natural ", "").replace(" gem", "").replace(" stone", "")
-    clean = clean.replace(" crystal", "").replace(" specimen", "").replace(" rough", "")
-    clean = clean.replace(" tumbled", "").replace(" polished", "").replace(" faceted", "")
-    clean = clean.strip()
+    qualifiers = {"natural", "gem", "stone", "crystal", "specimen", "rough", "tumbled", "polished", "faceted"}
+    tokens = [w for w in clean.split() if w not in qualifiers]
+    clean = " ".join(tokens)
     return SYNONYMS.get(clean, clean)
+
+
+def is_mineral_match(candidate: str, target: str) -> bool:
+    """
+    Deterministic, strict mineral matching with space/underscore/casing normalization.
+    Allows exact normalized match and variety/parent token-set matching (e.g. Quartz in Rose Quartz),
+    preventing substring misclassifications (e.g. Pyrite matching inside Chalcopyrite).
+    """
+    nc = normalize_mineral_name(candidate)
+    nt = normalize_mineral_name(target)
+    if not nc or not nt:
+        return False
+    if nc == nt:
+        return True
+    c_words = set(nc.split())
+    t_words = set(nt.split())
+    if c_words and t_words and (c_words.issubset(t_words) or t_words.issubset(c_words)):
+        return True
+    return False
 
 
 def get_mineral_family(name: str) -> str:
@@ -233,15 +252,20 @@ def check_lookalike_twin_named(true_label: str, candidates: List[str], twin_fiel
     if not expected_twins:
         return True  # If no primary lookalike is registered, consider requirement met
 
-    norm_candidates = [normalize_mineral_name(c) for c in candidates]
+    norm_candidates = [normalize_mineral_name(c) for c in candidates if c]
     norm_twin_field = normalize_mineral_name(twin_field)
 
     for twin in expected_twins:
         twin_norm = normalize_mineral_name(twin)
-        if any(twin_norm in c or c in twin_norm for c in norm_candidates):
-            return True
-        if norm_twin_field and (twin_norm in norm_twin_field or norm_twin_field in twin_norm):
-            return True
+        twin_words = set(twin_norm.split())
+        for c in norm_candidates:
+            c_words = set(c.split())
+            if c == twin_norm or (twin_words and c_words and (twin_words.issubset(c_words) or c_words.issubset(twin_words))):
+                return True
+        if norm_twin_field:
+            tf_words = set(norm_twin_field.split())
+            if norm_twin_field == twin_norm or (twin_words and tf_words and (twin_words.issubset(tf_words) or tf_words.issubset(twin_words))):
+                return True
     return False
 
 
@@ -254,11 +278,22 @@ def call_gemini_vision_api(
     prompt_text: str,
     api_key: str,
     model: str = "gemini-1.5-flash",
-    timeout_secs: float = 8.0
+    timeout_secs: float = 8.0,
+    expected_prompt_sha256: Optional[str] = None
 ) -> Dict[str, Any]:
-    """Execute live multimodal Gemini Vision API call with timeout and JSON output."""
+    """Execute live multimodal Gemini Vision API call with timeout, prompt integrity verification, and JSON output."""
     if not image_path.exists():
         raise FileNotFoundError(f"Image not found at {image_path}")
+
+    if not prompt_text or not prompt_text.strip():
+        raise ValueError("Prompt text cannot be empty.")
+
+    # Clean and verify prompt text integrity
+    clean_prompt = prompt_text.strip()
+    if expected_prompt_sha256:
+        actual_sha256 = hashlib.sha256(prompt_text.encode("utf-8")).hexdigest()
+        if actual_sha256.lower() != expected_prompt_sha256.lower():
+            raise ValueError(f"Prompt SHA-256 verification failed: expected {expected_prompt_sha256}, got {actual_sha256}")
 
     with open(image_path, "rb") as img_file:
         image_bytes = img_file.read()
@@ -275,7 +310,7 @@ def call_gemini_vision_api(
         "contents": [
             {
                 "parts": [
-                    {"text": prompt_text},
+                    {"text": clean_prompt},
                     {
                         "inlineData": {
                             "mimeType": mime_type,
@@ -450,15 +485,10 @@ class BenchmarkScorer:
         Calculates Result (top1, top3, family, miss), Lookalike Twin Named (yes/no),
         and Error Cause (Taxonomy from Page 6).
         """
-        norm_label = normalize_mineral_name(label)
-        norm_p1 = normalize_mineral_name(pred_1)
-        norm_p2 = normalize_mineral_name(pred_2)
-        norm_p3 = normalize_mineral_name(pred_3)
-
         # 1. Result Classification
-        if norm_p1 == norm_label or (norm_label in norm_p1 and len(norm_p1) > 2) or (norm_p1 in norm_label and len(norm_label) > 2):
+        if is_mineral_match(pred_1, label):
             result = "top1"
-        elif any((norm_label == p or (norm_label in p and len(p) > 2) or (p in norm_label and len(norm_label) > 2)) for p in [norm_p2, norm_p3] if p):
+        elif is_mineral_match(pred_2, label) or is_mineral_match(pred_3, label):
             result = "top3"
         elif get_mineral_family(pred_1) == get_mineral_family(label) and get_mineral_family(label) != "Unknown":
             result = "family"
@@ -491,10 +521,21 @@ class BenchmarkScorer:
 class AccuracyReport:
     """Calculates all rubric metrics, calibration bands, and produces Markdown/JSON reports."""
 
-    def __init__(self, scored_rows: List[Dict[str, Any]], run_id: str = "run-01", model_name: str = "gemini-1.5-flash"):
+    def __init__(
+        self,
+        scored_rows: List[Dict[str, Any]],
+        run_id: str = "run-01",
+        model_name: str = "gemini-1.5-flash",
+        prompt_name: str = "",
+        prompt_path: str = "",
+        prompt_sha256: str = ""
+    ):
         self.rows = scored_rows
         self.run_id = run_id
         self.model_name = model_name
+        self.prompt_name = prompt_name
+        self.prompt_path = prompt_path
+        self.prompt_sha256 = prompt_sha256
         self.timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%SZ")
         self.stats = self._calculate_all_stats()
         self.verdict, self.verdict_rationale = self._determine_verdict()
@@ -678,6 +719,9 @@ class AccuracyReport:
         if ta["total"] > 0 and (ta["top1_pct"] < 55.0 or ta["top3_pct"] < 80.0):
             reasons.append(f"Tier A failed critical floor: Top-1 {ta['top1_pct']}% (<55%) or Top-3 {ta['top3_pct']}% (<80%).")
             return "FAIL", reasons
+        if tb["total"] > 0 and (tb["top1_pct"] < 40.0 or tb["top3_pct"] < 65.0):
+            reasons.append(f"Tier B failed critical floor: Top-1 {tb['top1_pct']}% (<40%) or Top-3 {tb['top3_pct']}% (<65%).")
+            return "FAIL", reasons
 
         if conf_wrong > 2:
             reasons.append(f"Confident wrong answers exceeded limit: {conf_wrong} observed (spec allows max 2).")
@@ -728,6 +772,7 @@ class AccuracyReport:
         md = f"""# Gem ID Scanner · Pre-Build Accuracy Validation Report
 
 **Run ID**: `{self.run_id}` | **Model**: `{self.model_name}` | **Date**: `{self.timestamp}`  
+**Prompt**: `{self.prompt_name}` (`{self.prompt_path}`) | **Prompt SHA-256**: `{self.prompt_sha256}`  
 **Spec Reference**: `gem-scanner-accuracy-test-plan.pdf` (Appendix A & B)
 
 ---
@@ -810,6 +855,9 @@ class AccuracyReport:
             "run_id": self.run_id,
             "timestamp": self.timestamp,
             "model": self.model_name,
+            "prompt_name": self.prompt_name,
+            "prompt_path": str(self.prompt_path),
+            "prompt_sha256": self.prompt_sha256,
             "verdict": self.verdict,
             "verdict_rationale": self.verdict_rationale,
             "metrics": self.stats
@@ -898,28 +946,35 @@ def main():
         print(f"[-] Error: Scoring sheet not found at {sheet_path}")
         sys.exit(1)
 
+    prompt_name = prompt_path.name if prompt_path else ""
+    prompt_sha256 = ""
     prompt_text = ""
-    if not args.score_only and not args.mock:
-        if not prompt_path.exists():
-            print(f"[-] Error: Prompt file not found at {prompt_path}")
-            sys.exit(1)
-        with open(prompt_path, "r", encoding="utf-8") as pf:
-            prompt_text = pf.read()
-        if not args.api_key:
-            print("[!] Warning: No GEMINI_API_KEY provided. Switching to high-fidelity mock mode.")
-            args.mock = True
 
-    # Read rows from sheet
+    if prompt_path.exists():
+        with open(prompt_path, "rb") as pf:
+            prompt_bytes = pf.read()
+            prompt_sha256 = hashlib.sha256(prompt_bytes).hexdigest()
+            prompt_text = prompt_bytes.decode("utf-8")
+    elif not args.score_only and not args.mock:
+        print(f"[-] Error: Prompt file not found at {prompt_path}")
+        sys.exit(1)
+
+    if not args.score_only and not args.mock and not args.api_key:
+        print("[!] Warning: No GEMINI_API_KEY provided. Switching to high-fidelity mock mode.")
+        args.mock = True
+
+    # Read rows from sheet (ignoring metadata comment lines)
     rows: List[Dict[str, str]] = []
     with open(sheet_path, "r", encoding="utf-8") as f:
-        reader = csv.DictReader(f)
+        lines = [line for line in f if not line.startswith("#")]
+        reader = csv.DictReader(lines)
         for r in reader:
             rows.append(r)
 
     print(f"[*] Loaded {len(rows)} test rows from {sheet_path}")
     print(f"[*] Mode: {'Score Only' if args.score_only else ('Simulated Mock' if args.mock else f'Live API ({args.model})')}")
     print(f"[*] Target Run ID: {args.run_id}")
-    print(f"[*] Prompt File: {args.prompt}")
+    print(f"[*] Prompt File: {args.prompt} (SHA-256: {prompt_sha256[:12]}...)" if prompt_sha256 else f"[*] Prompt File: {args.prompt}")
 
     # Process Inference
     tier_a_pass_cache: Dict[str, bool] = {}
@@ -971,7 +1026,8 @@ def main():
                             image_path=img_path,
                             prompt_text=prompt_text,
                             api_key=args.api_key,
-                            model=args.model
+                            model=args.model,
+                            expected_prompt_sha256=prompt_sha256
                         )
                         pred_1 = api_resp.get("pred_1") or api_resp.get("topMineralName") or ""
                         pred_2 = api_resp.get("pred_2", "")
@@ -1021,20 +1077,33 @@ def main():
         row["error_cause"] = error_cause
         scored_rows.append(row)
 
-    # Output Scored CSV (with conf_2 and conf_3 columns)
+    # Output Scored CSV (with prompt metadata and conf_2/conf_3 columns)
     csv_out_path = output_dir / f"scored_sheet_{args.run_id}.csv"
     fieldnames = [
         "photo_id", "specimen_id", "label", "label_basis", "form", "source_rights",
         "pred_1", "conf_1", "pred_2", "conf_2", "pred_3", "conf_3", "result", "twin_named", "error_cause", "notes"
     ]
     with open(csv_out_path, "w", newline="", encoding="utf-8") as f:
+        if prompt_name:
+            f.write(f"# prompt_name: {prompt_name}\n")
+        if prompt_path:
+            f.write(f"# prompt_path: {prompt_path}\n")
+        if prompt_sha256:
+            f.write(f"# prompt_sha256: {prompt_sha256}\n")
         writer = csv.DictWriter(f, fieldnames=fieldnames, extrasaction="ignore")
         writer.writeheader()
         writer.writerows(scored_rows)
     print(f"[+] Saved scored dataset to: {csv_out_path}")
 
     # Generate Reports
-    reporter = AccuracyReport(scored_rows, run_id=args.run_id, model_name=args.model)
+    reporter = AccuracyReport(
+        scored_rows,
+        run_id=args.run_id,
+        model_name=args.model,
+        prompt_name=prompt_name,
+        prompt_path=str(prompt_path),
+        prompt_sha256=prompt_sha256
+    )
     md_content = reporter.generate_markdown_report()
     json_content = reporter.to_json()
 
