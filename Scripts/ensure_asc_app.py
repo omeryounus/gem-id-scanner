@@ -10,7 +10,7 @@ Environment variables supported:
   APPSTORE_API_ISSUER_ID or APP_STORE_CONNECT_API_KEY_ISSUER_ID
   APPSTORE_API_KEY_BASE64 (base64 of .p8)
   APP_STORE_CONNECT_API_KEY_KEY_FILEPATH (path to .p8 file)
-  APP_IDENTIFIER (default: com.omeryounus.gemidscanner)
+  APP_IDENTIFIER (default: com.gemidscanner.app)
   APP_NAME (default: Gem ID Scanner)
   APP_SKU (default: gem-id-scanner-001)
   PRIMARY_LOCALE (default: en-US)
@@ -40,7 +40,7 @@ except ImportError:
 import urllib.error
 import urllib.request
 
-DEFAULT_BUNDLE_ID = "com.omeryounus.gemidscanner"
+DEFAULT_BUNDLE_ID = "com.gemidscanner.app"
 DEFAULT_APP_NAME = "Gem ID Scanner"
 DEFAULT_SKU = "gem-id-scanner-001"
 DEFAULT_LOCALE = "en-US"

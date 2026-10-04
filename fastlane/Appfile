@@ -1,4 +1,4 @@
 # Fastlane Appfile for Gem ID Scanner
-app_identifier(ENV.fetch("APP_IDENTIFIER", "com.omeryounus.gemidscanner"))
+app_identifier(ENV.fetch("APP_IDENTIFIER", "com.gemidscanner.app"))
 apple_id(ENV.fetch("APPLE_ID", "$APP_REVIEW_EMAIL"))
 team_id(ENV.fetch("APPLE_TEAM_ID", "Z2RB57KVQ5"))

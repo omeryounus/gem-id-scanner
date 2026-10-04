@@ -51,7 +51,7 @@ platform :ios do
   desc "Ensure Bundle ID and App Store Connect app record exist via Connect API"
   lane :ensure_app do
     api_key = load_api_key
-    app_id = ENV.fetch("APP_IDENTIFIER", "com.omeryounus.gemidscanner")
+    app_id = ENV.fetch("APP_IDENTIFIER", "com.gemidscanner.app")
     app_name = ENV.fetch("APP_NAME", "Gem ID Scanner")
     sku = ENV.fetch("APP_SKU", "gem-id-scanner-001")
 
@@ -129,7 +129,7 @@ platform :ios do
     scheme = options[:scheme] || "GemIDScanner"
     project = options[:project] || "GemIDScanner.xcodeproj"
     output_dir = options[:output_dir] || "./build"
-    app_id = ENV.fetch("APP_IDENTIFIER", "com.omeryounus.gemidscanner")
+    app_id = ENV.fetch("APP_IDENTIFIER", "com.gemidscanner.app")
     team_id = ENV.fetch("APPLE_TEAM_ID", "Z2RB57KVQ5")
 
     gym(
@@ -155,7 +155,7 @@ platform :ios do
   desc "Build and upload Gem ID Scanner to TestFlight with changelog"
   lane :beta do |options|
     api_key = load_api_key
-    app_id = ENV.fetch("APP_IDENTIFIER", "com.omeryounus.gemidscanner")
+    app_id = ENV.fetch("APP_IDENTIFIER", "com.gemidscanner.app")
     team_id = ENV.fetch("APPLE_TEAM_ID", "Z2RB57KVQ5")
     changelog = options[:changelog] || ENV["CHANGELOG"] || "Automated TestFlight release for Gem ID Scanner"
 

@@ -16,7 +16,7 @@
 	<string>manual</string>
 	<key>provisioningProfiles</key>
 	<dict>
-		<key>com.omeryounus.gemidscanner</key>
+		<key>com.gemidscanner.app</key>
 		<string>YOUR_PROVISIONING_PROFILE_NAME</string>
 	</dict>
 </dict>

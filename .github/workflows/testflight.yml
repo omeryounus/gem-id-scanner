@@ -11,7 +11,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  APP_IDENTIFIER: com.omeryounus.gemidscanner
+  APP_IDENTIFIER: com.gemidscanner.app
   APPLE_TEAM_ID: Z2RB57KVQ5
   APP_NAME: "Gem ID Scanner"
   APP_SKU: gem-id-scanner-001

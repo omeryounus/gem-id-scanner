@@ -3,7 +3,7 @@
 ## App Information
 - **App Name / Title**: `Gem ID Scanner - Rock & Gem` *(28 / 30 chars)*
 - **Subtitle**: `AI Rock & Mineral Identifier` *(28 / 30 chars)*
-- **Bundle ID**: `com.omeryounus.gemidscanner`
+- **Bundle ID**: `com.gemidscanner.app`
 - **SKU**: `gem-id-scanner-001`
 - **Primary Language**: English (U.S.) (`en-US`)
 - **Primary Category**: Reference
