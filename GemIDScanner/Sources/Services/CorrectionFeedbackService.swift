@@ -4,6 +4,7 @@ import UIKit
 public struct MineralCorrectionItem: Identifiable, Codable, Sendable {
     public var id: UUID
     public let timestamp: Date
+    public let photoData: Data?
     public let predictedMineral: String
     public let userCorrectedMineral: String
     public let userNotes: String
@@ -13,6 +14,7 @@ public struct MineralCorrectionItem: Identifiable, Codable, Sendable {
     public init(
         id: UUID = UUID(),
         timestamp: Date = Date(),
+        photoData: Data? = nil,
         predictedMineral: String,
         userCorrectedMineral: String,
         userNotes: String = "",
@@ -21,6 +23,7 @@ public struct MineralCorrectionItem: Identifiable, Codable, Sendable {
     ) {
         self.id = id
         self.timestamp = timestamp
+        self.photoData = photoData
         self.predictedMineral = predictedMineral
         self.userCorrectedMineral = userCorrectedMineral
         self.userNotes = userNotes
@@ -56,8 +59,9 @@ public final class CorrectionFeedbackService: ObservableObject {
         loadQueue()
     }
     
-    public func submitCorrection(predicted: String, corrected: String, notes: String, confidence: Double) {
+    public func submitCorrection(photoData: Data? = nil, predicted: String, corrected: String, notes: String, confidence: Double) {
         let item = MineralCorrectionItem(
+            photoData: photoData,
             predictedMineral: predicted,
             userCorrectedMineral: corrected,
             userNotes: notes,

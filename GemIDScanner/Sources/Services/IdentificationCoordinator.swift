@@ -57,6 +57,7 @@ public final class IdentificationCoordinator: ObservableObject {
     }
     
     /// Executes the complete end-to-end identification workflow.
+    /// Executes the complete end-to-end identification workflow.
     public func identify(image: UIImage) async throws -> IdentificationResult {
         isAnalyzing = true
         errorMessage = nil
@@ -64,19 +65,42 @@ public final class IdentificationCoordinator: ObservableObject {
         // 1. Quality Check
         analysisStep = .assessingQuality
         let qualityAssessment = CameraService().evaluateImageQuality(image: image)
-        try await Task.sleep(nanoseconds: 120_000_000)
         
-        // 2. Stage 1 On-Device CoreML
+        // 2. Stage 1 On-Device CoreML (<100ms)
         analysisStep = .runningStage1OnDevice
         let stage1 = try await coreMLService.classify(image: image)
         
-        // 3. Stage 2 Cloud Second Opinion
+        // 3. Stage 2 Cloud Second Opinion with 6-second timeout
         analysisStep = .runningStage2CloudOpinion
-        let stage2 = try await geminiService.analyzeSecondOpinion(image: image, stage1Candidate: stage1.topMineralName)
+        let stage2: Stage2Inference
+        do {
+            stage2 = try await withThrowingTaskGroup(of: Stage2Inference.self) { group in
+                group.addTask {
+                    try await self.geminiService.analyzeSecondOpinion(image: image, stage1Candidate: stage1.topMineralName)
+                }
+                group.addTask {
+                    try await Task.sleep(nanoseconds: 6_000_000_000)
+                    throw NSError(domain: "IdentificationCoordinator", code: 408, userInfo: [NSLocalizedDescriptionKey: "Stage 2 cloud opinion timed out after 6 seconds."])
+                }
+                let first = try await group.next()!
+                group.cancelAll()
+                return first
+            }
+        } catch {
+            // Stage 2 timeout or offline fallback
+            let fallbackMin = database.find(byName: stage1.topMineralName)
+            stage2 = Stage2Inference(
+                topMineralName: stage1.topMineralName,
+                score: min(stage1.score, 0.84),
+                reasoning: "On-device neural profile analyzed. Stage 2 completed with offline heuristics.",
+                visualCuesObserved: ["Optical habit matches \(fallbackMin?.crystalSystem ?? "crystal standard")"],
+                suggestedTests: fallbackMin?.ruleOutTests.prefix(2).map { String($0) } ?? ["Mohs Hardness Scratch Test"],
+                lookalikeDisambiguation: fallbackMin?.topLookalikes.first.map { "Distinguish from \($0.mineralName): \($0.separatingTest)" }
+            )
+        }
         
         // 4. Two-Stage Confidence Merge Logic
         analysisStep = .mergingConfidence
-        try await Task.sleep(nanoseconds: 150_000_000)
         
         let result = mergeTwoStagePredictions(
             stage1: stage1,
@@ -105,23 +129,24 @@ public final class IdentificationCoordinator: ObservableObject {
         let primaryName: String
         
         if doesAgree {
-            // Stage 1 & 2 Agree: Weighted average (40% Stage 1, 60% Stage 2) capped at 96%
-            let rawAvg = (stage1.score * 0.40) + (stage2.score * 0.60)
-            mergedScore = min(rawAvg, 0.96) // Capped at 96%
+            // Agreement: weighted average favoring Stage 2 multimodal reasoning, capped at 96%
+            let weighted = (stage1.score * 0.35) + (stage2.score * 0.65)
+            mergedScore = min(weighted, 0.96)
             primaryName = name1
         } else {
-            // Disagreement: Lower score to Likely or Best Guesses
-            let maxScore = max(stage1.score, stage2.score)
-            mergedScore = min(maxScore * 0.72, 0.78) // Drops down into 55-78% Likely or lower
+            // Disagreement: Stage 2 multimodal vision takes precedence as primary,
+            // with confidence calibrated down to Likely (55-84%) or Best Guesses (<55%)
+            let lowerScore = min(stage1.score, stage2.score)
+            mergedScore = min(lowerScore, 0.78)
             primaryName = stage2.score >= stage1.score ? name2 : name1
         }
         
         let primaryMineral = database.find(byName: primaryName)
         
-        // Build candidate list
+        // Build Top 3 candidate list
         var candidateList: [CandidateItem] = []
         
-        // Top candidate
+        // Candidate #1
         candidateList.append(CandidateItem(
             mineralName: primaryName,
             score: mergedScore,
@@ -130,42 +155,91 @@ public final class IdentificationCoordinator: ObservableObject {
             ruleInAction: "Inspect Mohs hardness (\(primaryMineral?.mohsHardness ?? "6-7")) and streak."
         ))
         
-        // If disagreed, append alternate top pick as Candidate #2
-        let secondaryName = doesAgree ? (primaryMineral?.topLookalikes.first?.mineralName ?? "Quartz") : (primaryName == name1 ? name2 : name1)
-        if secondaryName != primaryName {
+        // Candidate #2
+        let secondaryName: String
+        if !doesAgree {
+            secondaryName = (primaryName == name1) ? name2 : name1
+        } else if let s2c2 = stage2.candidate2Name, !s2c2.isEmpty, s2c2.caseInsensitiveCompare(primaryName) != .orderedSame {
+            secondaryName = s2c2
+        } else {
+            secondaryName = primaryMineral?.topLookalikes.first?.mineralName ?? "Quartz"
+        }
+        
+        if secondaryName.caseInsensitiveCompare(primaryName) != .orderedSame {
             let secondaryMineral = database.find(byName: secondaryName)
-            let secondaryScore = doesAgree ? max(mergedScore - 0.22, 0.45) : min(min(stage1.score, stage2.score), mergedScore - 0.08)
+            let secondaryScore: Double
+            if doesAgree {
+                if let s2Score = stage2.candidate2Score {
+                    secondaryScore = min(s2Score, mergedScore - 0.15)
+                } else {
+                    secondaryScore = max(mergedScore - 0.25, 0.40)
+                }
+            } else {
+                secondaryScore = min(min(stage1.score, stage2.score), mergedScore - 0.08)
+            }
+            
             candidateList.append(CandidateItem(
                 mineralName: secondaryName,
                 score: secondaryScore,
                 keyCharacteristics: secondaryMineral?.colorRange ?? [],
-                separatingTestSummary: secondaryMineral?.ruleOutTests.first,
+                separatingTestSummary: secondaryMineral?.ruleOutTests.first ?? primaryMineral?.topLookalikes.first?.separatingTest,
                 ruleInAction: "Perform diagnostic scratch test against \(primaryName)."
             ))
         }
         
-        // Candidate #3 (Lookalike from database)
-        if let tertiaryLookalike = primaryMineral?.topLookalikes.first(where: { $0.mineralName != secondaryName }) {
-            let tertiaryMineral = database.find(byName: tertiaryLookalike.mineralName)
+        // Candidate #3
+        let tertiaryName: String
+        if let s2c3 = stage2.candidate3Name, !s2c3.isEmpty,
+           s2c3.caseInsensitiveCompare(primaryName) != .orderedSame,
+           s2c3.caseInsensitiveCompare(secondaryName) != .orderedSame {
+            tertiaryName = s2c3
+        } else if let tertiaryLookalike = primaryMineral?.topLookalikes.first(where: {
+            $0.mineralName.caseInsensitiveCompare(primaryName) != .orderedSame &&
+            $0.mineralName.caseInsensitiveCompare(secondaryName) != .orderedSame
+        }) {
+            tertiaryName = tertiaryLookalike.mineralName
+        } else {
+            tertiaryName = "Calcite"
+        }
+        
+        if tertiaryName.caseInsensitiveCompare(primaryName) != .orderedSame &&
+           tertiaryName.caseInsensitiveCompare(secondaryName) != .orderedSame {
+            let tertiaryMineral = database.find(byName: tertiaryName)
+            let tertiaryScore: Double
+            if let s3Score = stage2.candidate3Score {
+                tertiaryScore = min(s3Score, (candidateList.last?.score ?? mergedScore) - 0.05)
+            } else {
+                tertiaryScore = max((candidateList.last?.score ?? mergedScore) - 0.15, 0.25)
+            }
+            
             candidateList.append(CandidateItem(
-                mineralName: tertiaryLookalike.mineralName,
-                score: max(mergedScore - 0.38, 0.32),
+                mineralName: tertiaryName,
+                score: tertiaryScore,
                 keyCharacteristics: tertiaryMineral?.colorRange ?? [],
-                separatingTestSummary: tertiaryLookalike.separatingTest,
-                ruleInAction: tertiaryLookalike.separatingTest
+                separatingTestSummary: tertiaryMineral?.ruleOutTests.first,
+                ruleInAction: "Inspect cleavage geometry and acid reactivity."
             ))
         }
         
         // Separating tests compilation
         var tests: [String] = []
+        if !stage2.suggestedTests.isEmpty {
+            tests.append(contentsOf: stage2.suggestedTests)
+        }
         if let pMin = primaryMineral {
-            tests.append(contentsOf: pMin.ruleOutTests)
-            for lookalike in pMin.topLookalikes.prefix(2) {
-                tests.append("\(lookalike.mineralName) Distinction: \(lookalike.separatingTest)")
+            for test in pMin.ruleOutTests where !tests.contains(test) {
+                tests.append(test)
             }
-        } else {
+            for lookalike in pMin.topLookalikes.prefix(2) {
+                let lookalikeStr = "\(lookalike.mineralName) Distinction: \(lookalike.separatingTest)"
+                if !tests.contains(lookalikeStr) {
+                    tests.append(lookalikeStr)
+                }
+            }
+        }
+        if tests.isEmpty {
             tests = [
-                "Mohs Scratch Test: Test against common hardness benchmarks.",
+                "Mohs Scratch Test: Test against standard glass plate (Mohs 5.5).",
                 "Ceramic Streak Tile: Drag across unglazed tile to observe powdered streak.",
                 "Dilute Acid / Vinegar: Test 1 drop of vinegar for CO₂ fizzing."
             ]

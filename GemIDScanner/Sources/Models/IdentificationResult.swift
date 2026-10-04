@@ -49,6 +49,12 @@ public struct Stage2Inference: Codable, Hashable, Sendable {
     public let visualCuesObserved: [String]
     public let suggestedTests: [String]
     public let lookalikeDisambiguation: String?
+    public let candidate2Name: String?
+    public let candidate2Score: Double?
+    public let candidate3Name: String?
+    public let candidate3Score: Double?
+    public let family: String?
+    public let identifiedForm: String?
     
     public init(
         topMineralName: String,
@@ -56,7 +62,13 @@ public struct Stage2Inference: Codable, Hashable, Sendable {
         reasoning: String,
         visualCuesObserved: [String] = [],
         suggestedTests: [String] = [],
-        lookalikeDisambiguation: String? = nil
+        lookalikeDisambiguation: String? = nil,
+        candidate2Name: String? = nil,
+        candidate2Score: Double? = nil,
+        candidate3Name: String? = nil,
+        candidate3Score: Double? = nil,
+        family: String? = nil,
+        identifiedForm: String? = nil
     ) {
         self.topMineralName = topMineralName
         self.score = score
@@ -64,6 +76,12 @@ public struct Stage2Inference: Codable, Hashable, Sendable {
         self.visualCuesObserved = visualCuesObserved
         self.suggestedTests = suggestedTests
         self.lookalikeDisambiguation = lookalikeDisambiguation
+        self.candidate2Name = candidate2Name
+        self.candidate2Score = candidate2Score
+        self.candidate3Name = candidate3Name
+        self.candidate3Score = candidate3Score
+        self.family = family
+        self.identifiedForm = identifiedForm
     }
 }
 

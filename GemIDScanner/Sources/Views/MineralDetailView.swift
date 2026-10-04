@@ -353,3 +353,104 @@ public struct FlowLayout: Layout {
         }
     }
 }
+
+/// Offline geological encyclopedia catalog browser for all 60 launch minerals.
+public struct EncyclopediaCatalogView: View {
+    @State private var searchText = ""
+    @State private var selectedCategory: MineralCategory?
+    @State private var selectedMineral: Mineral?
+    
+    private let allMinerals = MineralDatabase.shared.allMinerals
+    
+    public init() {}
+    
+    private var filteredMinerals: [Mineral] {
+        allMinerals.filter { mineral in
+            let matchesCategory = selectedCategory == nil || mineral.category == selectedCategory
+            let matchesSearch = searchText.isEmpty ||
+                mineral.name.localizedCaseInsensitiveContains(searchText) ||
+                mineral.chemicalFormula.localizedCaseInsensitiveContains(searchText) ||
+                mineral.summary.localizedCaseInsensitiveContains(searchText)
+            return matchesCategory && matchesSearch
+        }
+    }
+    
+    public var body: some View {
+        VStack(spacing: 0) {
+            // Category Filter Chips
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    Button(action: { selectedCategory = nil }) {
+                        Text("All Minerals (\(allMinerals.count))")
+                            .font(.system(size: 12, weight: selectedCategory == nil ? .bold : .medium))
+                            .foregroundColor(selectedCategory == nil ? .black : .white.opacity(0.8))
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 6)
+                            .background(selectedCategory == nil ? Color.cyan : Color.white.opacity(0.08))
+                            .clipShape(Capsule())
+                    }
+                    
+                    ForEach(MineralCategory.allCases, id: \.self) { category in
+                        Button(action: { selectedCategory = category }) {
+                            HStack(spacing: 4) {
+                                Image(systemName: category.icon)
+                                Text(category.rawValue)
+                            }
+                            .font(.system(size: 12, weight: selectedCategory == category ? .bold : .medium))
+                            .foregroundColor(selectedCategory == category ? .black : .white.opacity(0.8))
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(selectedCategory == category ? Color.cyan : Color.white.opacity(0.08))
+                            .clipShape(Capsule())
+                        }
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+            }
+            
+            // Minerals List
+            List(filteredMinerals) { mineral in
+                Button(action: { selectedMineral = mineral }) {
+                    HStack(spacing: 12) {
+                        ZStack {
+                            Circle()
+                                .fill(Color.white.opacity(0.08))
+                                .frame(width: 40, height: 40)
+                            Image(systemName: mineral.category.icon)
+                                .foregroundColor(.cyan)
+                                .font(.system(size: 16))
+                        }
+                        
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(mineral.name)
+                                .font(.system(size: 16, weight: .bold, design: .rounded))
+                                .foregroundColor(.white)
+                            Text("\(mineral.chemicalFormula) • Mohs \(mineral.mohsHardness)")
+                                .font(.system(size: 12, design: .monospaced))
+                                .foregroundColor(.white.opacity(0.6))
+                        }
+                        
+                        Spacer()
+                        
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundColor(.white.opacity(0.3))
+                    }
+                    .padding(.vertical, 4)
+                }
+                .listRowBackground(Color.white.opacity(0.04))
+            }
+            .scrollContentBackground(.hidden)
+        }
+        .background(Color(red: 0.07, green: 0.08, blue: 0.11).ignoresSafeArea())
+        .navigationTitle("Mineral Catalog")
+        .navigationBarTitleDisplayMode(.inline)
+        .searchable(text: $searchText, prompt: "Search 60 minerals by name or formula")
+        .sheet(item: $selectedMineral) { mineral in
+            NavigationStack {
+                MineralDetailView(mineral: mineral)
+            }
+        }
+    }
+}

@@ -5,9 +5,9 @@ import Combine
 
 public enum CameraQualityWarning: String, CaseIterable, Sendable {
     case tooDark = "Lighting is too dark. Turn on torch or move to better light."
-    case blurry = "Image appears blurry or out of focus. Hold steady."
-    case overexposed = "Glare / overexposure detected. Reduce direct reflection."
-    case tooFar = "Object too far away. Move closer to fill the reticle frame."
+    case blurry = "Move closer - fill the frame"
+    case overexposed = "Too bright - reduce glare"
+    case tooFar = "Move closer - fill the frame"
 }
 
 public struct ImageQualityAssessment: Sendable {
@@ -164,64 +164,99 @@ public final class CameraService: NSObject, ObservableObject {
         }
     }
     
-    /// Evaluates sharpness and lighting of a captured UIImage
+    /// Evaluates sharpness (variance of Laplacian) and lighting/glare of a captured UIImage
     public func evaluateImageQuality(image: UIImage) -> ImageQualityAssessment {
         guard let cgImage = image.cgImage else {
             return ImageQualityAssessment(isAcceptable: true, warnings: [], brightnessScore: 0.5, sharpnessScore: 0.5)
         }
         
-        let width = cgImage.width
-        let height = cgImage.height
-        
-        // Fast downsampled brightness check
-        guard let colorSpace = cgImage.colorSpace,
-              let context = CGContext(
-                data: nil,
-                width: 32,
-                height: 32,
-                bitsPerComponent: 8,
-                bytesPerRow: 32 * 4,
-                space: colorSpace,
-                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
-              ) else {
+        let width = 64
+        let height = 64
+        let colorSpace = CGColorSpaceCreateDeviceGray()
+        guard let context = CGContext(
+            data: nil,
+            width: width,
+            height: height,
+            bitsPerComponent: 8,
+            bytesPerRow: width,
+            space: colorSpace,
+            bitmapInfo: CGImageAlphaInfo.none.rawValue
+        ) else {
             return ImageQualityAssessment(isAcceptable: true, warnings: [], brightnessScore: 0.5, sharpnessScore: 0.5)
         }
         
-        context.draw(cgImage, in: CGRect(x: 0, y: 0, width: 32, height: 32))
+        context.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
         guard let pixelData = context.data else {
             return ImageQualityAssessment(isAcceptable: true, warnings: [], brightnessScore: 0.5, sharpnessScore: 0.5)
         }
         
-        let ptr = pixelData.bindMemory(to: UInt8.self, capacity: 32 * 32 * 4)
+        let ptr = pixelData.bindMemory(to: UInt8.self, capacity: width * height)
         var totalLuminance: Double = 0.0
-        let totalPixels = 32 * 32
+        var overexposedPixels = 0
+        let totalPixels = width * height
         
+        var grayGrid = [Double](repeating: 0.0, count: totalPixels)
         for i in 0..<totalPixels {
-            let r = Double(ptr[i * 4]) / 255.0
-            let g = Double(ptr[i * 4 + 1]) / 255.0
-            let b = Double(ptr[i * 4 + 2]) / 255.0
-            let lum = 0.299 * r + 0.587 * g + 0.114 * b
-            totalLuminance += lum
+            let val = Double(ptr[i]) / 255.0
+            grayGrid[i] = val
+            totalLuminance += val
+            if val > 0.92 {
+                overexposedPixels += 1
+            }
         }
         
         let avgBrightness = totalLuminance / Double(totalPixels)
+        let overexposedRatio = Double(overexposedPixels) / Double(totalPixels)
+        
+        // Variance of Laplacian computation on 64x64 grayscale grid
+        var laplacianValues: [Double] = []
+        laplacianValues.reserveCapacity((width - 2) * (height - 2))
+        
+        var laplacianSum: Double = 0.0
+        for y in 1..<(height - 1) {
+            for x in 1..<(width - 1) {
+                let center = grayGrid[y * width + x]
+                let top = grayGrid[(y - 1) * width + x]
+                let bottom = grayGrid[(y + 1) * width + x]
+                let left = grayGrid[y * width + (x - 1)]
+                let right = grayGrid[y * width + (x + 1)]
+                
+                // Discrete 2D Laplacian operator: [0, 1, 0; 1, -4, 1; 0, 1, 0]
+                let lap = (top + bottom + left + right) - (4.0 * center)
+                laplacianValues.append(lap)
+                laplacianSum += lap
+            }
+        }
+        
+        let count = Double(laplacianValues.count)
+        let laplacianMean = count > 0 ? (laplacianSum / count) : 0.0
+        var varianceSum: Double = 0.0
+        for val in laplacianValues {
+            let diff = val - laplacianMean
+            varianceSum += (diff * diff)
+        }
+        let laplacianVariance = count > 0 ? (varianceSum / count) : 0.0
+        let sharpnessScore = min(laplacianVariance * 120.0, 1.0)
+        
         var warnings: [CameraQualityWarning] = []
         
-        if avgBrightness < 0.18 {
+        // Quality checks
+        if avgBrightness < 0.16 {
             warnings.append(.tooDark)
-        } else if avgBrightness > 0.88 {
+        } else if avgBrightness > 0.82 || overexposedRatio > 0.22 {
             warnings.append(.overexposed)
         }
         
-        if width < 300 || height < 300 {
+        // Low variance of Laplacian indicates blur or object too far
+        if laplacianVariance < 0.0018 || cgImage.width < 300 || cgImage.height < 300 {
             warnings.append(.blurry)
         }
         
         let assessment = ImageQualityAssessment(
-            isAcceptable: warnings.count <= 1,
+            isAcceptable: warnings.isEmpty,
             warnings: warnings,
             brightnessScore: avgBrightness,
-            sharpnessScore: 0.75
+            sharpnessScore: sharpnessScore
         )
         self.currentQualityAssessment = assessment
         return assessment

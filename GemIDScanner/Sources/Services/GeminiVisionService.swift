@@ -47,6 +47,7 @@ public final class GeminiVisionService: @unchecked Sendable {
     }
     
     // MARK: - Live Gemini API Call
+    // MARK: - Live Gemini API Call
     private func performGeminiVisionRequest(image: UIImage, apiKey: String, stage1Hint: String) async throws -> Stage2Inference {
         guard let jpegData = image.jpegData(compressionQuality: 0.75) else {
             throw NSError(domain: "GeminiVisionService", code: 400, userInfo: [NSLocalizedDescriptionKey: "Failed to compress image."])
@@ -62,35 +63,49 @@ public final class GeminiVisionService: @unchecked Sendable {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.timeoutInterval = 6.5
+        request.timeoutInterval = 6.0
         
         let promptText = """
-        You are an expert gemologist, mineralogist, and crystallographer. Analyze this mineral/rock specimen image.
+        You are an expert gemologist, mineralogist, and crystallographer. Your task is to perform rigorous, non-destructive optical identification of the mineral, gemstone, or rock specimen shown in the provided photograph(s).
         Stage 1 on-device classifier shortlisted: "\(stage1Hint)".
-        
-        IDENTIFICATION METHODOLOGY & RULES:
-        
-        1. OPTICAL & MORPHOLOGICAL EVALUATION:
-        - Examine crystal habit, luster spectrum, cleavage vs conchoidal fracture, color zoning, inclusions, and optical phenomena.
-        
-        2. LOOKALIKE PAIR SEPARATION:
-        - Clear Quartz vs Glass / Topaz / Calcite (conchoidal fracture & striations vs bubbles/swirls or basal/rhombohedral cleavage).
-        - Citrine vs Heat-Treated Amethyst (uniform yellow throughout vs burnt orange tips on opaque white quartz bases).
-        - Turquoise vs Dyed Howlite (natural limonite matrix vs dye pooled in spiderweb fractures).
-        - Emerald vs Green Tourmaline (hexagonal prism & 3-phase inclusions vs vertical striations & triangular cross-section).
-        - Moonstone vs Rainbow Moonstone vs Opalite (billowy adularescence vs multi-color schiller vs orange glow synthetic glass).
-        - Obsidian vs Black Tourmaline (curved glassy conchoidal fracture vs longitudinal striations and columnar prism).
-        - Lapis Lazuli vs Sodalite (deep ultramarine with pyrite specks vs royal blue with white nepheline, no pyrite).
-        - Jade (Nephrite) vs Jadeite / Serpentine / Aventurine (greasy fibrous toughness vs granular vs soft vs aventurescent platelets).
-        
-        3. SHORTLIST-THEN-SEPARATE RANKING DISCIPLINE, TIE-BREAKS, AND ANTI-DEFAULT RULES:
-        - Shortlist Phase: Formulate top 3 candidate hypotheses before committing to rank 1.
-        - Separating Phase: Actively inspect for discriminating diagnostic features to promote a candidate to pred_1 only when visual evidence supports it over lookalikes.
-        - Anti-Default Rules: Never default to generic species (e.g. Clear Quartz, Glass, Slag, Calcite, Dyed Agate) when specific diagnostic traits exist or for tumbled/cut stones without evaluating luster, cleavage, and color depth.
-        - Tie-Breaks: Apply specific physical contrast criteria (e.g. heated tips -> Heat-Treated Amethyst, dye pooling -> Dyed Howlite, multi-color flash -> Rainbow Moonstone, pyrite -> Lapis).
-        - Candidate Spread Calibration: conf_1 - conf_2 margin >= 0.60 for Confirmed (0.85-0.96); 0.15-0.55 for Likely (0.55-0.84); < 0.15 for Best Guesses (<0.55). Never exceed 0.96.
-        
-        Return valid JSON in this exact structure:
+
+        ## 1. OPTICAL & MORPHOLOGICAL ATTRIBUTE EXAMINATION
+        Carefully evaluate visible features:
+        1. Crystal System & Habit: Prismatic, hexagonal, cubic, botryoidal, massive, rhombohedral, fibrous, bladed, tabular, geode/cluster, octahedron, dodecahedron.
+        2. Luster & Surface Sheen: Vitreous, adamantine, metallic, sub-metallic, silky, pearly, greasy/waxy, resinous, dull/earthy.
+        3. Cleavage vs. Fracture Morphology: Conchoidal fracture vs perfect planar cleavage (cubic, rhombohedral, basal, octahedral).
+        4. Color Distribution & Zoning: Base body color vs trace impurities, color zoning, phantom crystals.
+        5. Inclusions & Internal Phenomena: Rutile needles, tourmaline silk, pyrite specks, dendrites, gas bubbles/swirls (synthetic/glass).
+        6. Optical Phenomena: Labradorescence, adularescence, chatoyancy, asterism, pleochroism, aventurescence.
+        7. Specimen Form: Rough crystal, tumbled pebble, cabochon, faceted cut gem, cluster/druzy, polished slab, specimen on matrix.
+
+        ## 2. LOOKALIKE SEPARATION & CONFUSION PAIR CONTRAST
+        Actively contrast known lookalike twins before finalizing predictions:
+        - Clear Quartz vs Glass / Topaz / Calcite / Selenite (conchoidal fracture & striations vs bubbles/swirls or basal/rhombohedral cleavage).
+        - Citrine vs Heat-Treated Amethyst vs Yellow Topaz (uniform yellow throughout vs burnt orange tips on opaque white quartz bases).
+        - Amethyst vs Purple Fluorite / Tanzanite / Iolite (trigonal prism & conchoidal fracture vs cubic habit & octahedral cleavage).
+        - Turquoise vs Dyed Howlite / Dyed Magnesite / Chrysocolla / Amazonite (natural limonite matrix vs dye pooled in spiderweb fractures).
+        - Emerald vs Green Tourmaline / Green Fluorite / Dyed Quartz (hexagonal prism & 3-phase inclusions vs vertical striations & triangular cross-section).
+        - Obsidian vs Black Tourmaline (Schorl) vs Black Onyx vs Jet vs Hematite (glassy conchoidal fracture vs longitudinal striations and columnar prism).
+        - Moonstone vs Rainbow Moonstone vs Opalite vs White Chalcedony (billowy adularescence vs multi-color schiller vs orange glow synthetic glass).
+        - Jade (Nephrite) vs Jadeite vs Serpentine vs Green Aventurine (greasy fibrous toughness vs granular vs soft vs aventurescent platelets).
+        - Lapis Lazuli vs Sodalite vs Azurite vs Dumortierite (deep ultramarine with pyrite specks vs royal blue with white nepheline, no pyrite).
+        - Malachite vs Chrysocolla vs Dyed Howlite (concentric banded rings vs non-banded teal cyan).
+        - Ruby vs Red Spinel vs Almandine Garnet vs Red Glass (hexagonal tabular habit & rutile silk vs octahedrons vs dodecahedrons).
+        - Sapphire vs Blue Kyanite vs Tanzanite vs Blue Spinel (hexagonal corundum vs bladed crystals with directional hardness).
+
+        ## 3. SHORTLIST-THEN-SEPARATE RANKING DISCIPLINE, TIE-BREAKS, AND ANTI-DEFAULT RULES
+        - Phase 1 Shortlist: Formulate candidate shortlist of top 3 most plausible minerals before committing to rank 1.
+        - Phase 2 Separating Contrast: Actively inspect for discriminating diagnostic features to promote a candidate to pred_1 ONLY when visual evidence supports it over lookalikes.
+        - Phase 3 Anti-Default Rules: NEVER default to generic common species (Clear Quartz, Glass, Slag, Calcite, Dyed Agate) when specific diagnostic traits exist. For tumbled/cut stones, evaluate luster, cleavage, and color depth.
+        - Tie-Breaks: Apply specific physical contrast criteria (heated tips -> Heat-Treated Amethyst, dye pooling -> Dyed Howlite, multi-color flash -> Rainbow Moonstone, pyrite -> Lapis).
+        - Candidate Spread Calibration:
+          - Confirmed Band (conf_1 = 0.85 - 0.96): conf_1 - conf_2 margin >= 0.60. Never exceed 0.96.
+          - Likely Band (conf_1 = 0.55 - 0.84): conf_1 - conf_2 margin = 0.15 - 0.55.
+          - Best Guesses Band (conf_1 < 0.55): conf_1 - conf_2 margin < 0.15.
+
+        ## 4. RESPONSE FORMAT
+        Return valid JSON in this exact structure without markdown backticks:
         {
           "pred_1": "Primary Mineral Name",
           "conf_1": 0.92,
@@ -100,18 +115,18 @@ public final class GeminiVisionService: @unchecked Sendable {
           "conf_3": 0.03,
           "family": "Mineral Family",
           "identified_form": "rough | tumbled | cabochon | cut | cluster | slab",
-          "reasoning": "Detailed geological visual explanation applying shortlist-then-separate logic and anti-default validation.",
           "visual_cues": ["cue 1", "cue 2", "cue 3"],
+          "lookalike_twin": "Primary lookalike twin species",
+          "twin_in_top3": true,
           "separating_tests": [
             {
               "test_name": "Mohs Hardness Scratch Test",
-              "procedure": "Attempt to scratch glass plate (Mohs 5.5).",
+              "procedure": "Attempt to scratch standard glass plate (Mohs 5.5).",
               "diagnostic_rule": "Amethyst scratches glass; Fluorite cannot."
             }
           ],
-          "lookalike_twin": "Nearest lookalike twin species."
+          "reasoning": "Detailed geological explanation applying shortlist-then-separate logic, anti-default validation, and tie-break reasoning."
         }
-        Do not include markdown backticks around the json.
         """
         
         let payload: [String: Any] = [
@@ -127,6 +142,11 @@ public final class GeminiVisionService: @unchecked Sendable {
                         ]
                     ]
                 ]
+            ],
+            "generationConfig": [
+                "temperature": 0.1,
+                "topP": 0.95,
+                "responseMimeType": "application/json"
             ]
         ]
         
@@ -160,6 +180,13 @@ public final class GeminiVisionService: @unchecked Sendable {
                 let score = parsedDict["conf_1"] as? Double
                     ?? parsedDict["confidenceScore"] as? Double
                     ?? 0.88
+                let pred2 = parsedDict["pred_2"] as? String
+                let conf2 = parsedDict["conf_2"] as? Double
+                let pred3 = parsedDict["pred_3"] as? String
+                let conf3 = parsedDict["conf_3"] as? Double
+                let family = parsedDict["family"] as? String
+                let identifiedForm = parsedDict["identified_form"] as? String
+                
                 let reasoning = parsedDict["reasoning"] as? String
                     ?? "Multimodal visual confirmation based on surface geometry and luster."
                 let visualCues = parsedDict["visual_cues"] as? [String]
@@ -185,11 +212,17 @@ public final class GeminiVisionService: @unchecked Sendable {
                 
                 return Stage2Inference(
                     topMineralName: name,
-                    score: min(max(score, 0.40), 0.96),
+                    score: min(max(score, 0.30), 0.96),
                     reasoning: reasoning,
                     visualCuesObserved: visualCues,
                     suggestedTests: tests,
-                    lookalikeDisambiguation: lookalike
+                    lookalikeDisambiguation: lookalike,
+                    candidate2Name: pred2,
+                    candidate2Score: conf2 != nil ? min(max(conf2!, 0.01), 0.96) : nil,
+                    candidate3Name: pred3,
+                    candidate3Score: conf3 != nil ? min(max(conf3!, 0.01), 0.96) : nil,
+                    family: family,
+                    identifiedForm: identifiedForm
                 )
             }
         }
@@ -204,7 +237,9 @@ public final class GeminiVisionService: @unchecked Sendable {
         let name = mineral?.name ?? stage1Candidate
         let luster = mineral?.luster ?? "Vitreous"
         let formula = mineral?.chemicalFormula ?? "Silicate / Carbonate"
-        let lookalikes = mineral?.topLookalikes.first
+        let lookalikes = mineral?.topLookalikes
+        let primaryLookalike = lookalikes?.first
+        let secondaryLookalike = lookalikes != nil && lookalikes!.count > 1 ? lookalikes![1] : nil
         
         let reasoning = "Stage 2 visual synthesis confirmed \(name) (\(formula)) based on distinctive \(luster.lowercased()) surface reflections, color distribution, and characteristic fracture morphology."
         let cues = [
@@ -214,7 +249,7 @@ public final class GeminiVisionService: @unchecked Sendable {
         ]
         
         let tests = mineral?.ruleOutTests.prefix(2).map { String($0) } ?? ["Mohs Hardness Scratch Test", "Ceramic Streak Tile Test"]
-        let disambig = lookalikes != nil ? "Distinguish from \(lookalikes!.mineralName): \(lookalikes!.separatingTest)" : nil
+        let disambig = primaryLookalike != nil ? "Distinguish from \(primaryLookalike!.mineralName): \(primaryLookalike!.separatingTest)" : nil
         
         return Stage2Inference(
             topMineralName: name,
@@ -222,7 +257,13 @@ public final class GeminiVisionService: @unchecked Sendable {
             reasoning: reasoning,
             visualCuesObserved: cues,
             suggestedTests: tests,
-            lookalikeDisambiguation: disambig
+            lookalikeDisambiguation: disambig,
+            candidate2Name: primaryLookalike?.mineralName,
+            candidate2Score: 0.06,
+            candidate3Name: secondaryLookalike?.mineralName,
+            candidate3Score: 0.03,
+            family: mineral?.family,
+            identifiedForm: "rough"
         )
     }
 }

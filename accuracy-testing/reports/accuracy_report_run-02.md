@@ -1,6 +1,6 @@
 # Gem ID Scanner · Pre-Build Accuracy Validation Report
 
-**Run ID**: `run-02` | **Model**: `gemini-1.5-flash` | **Date**: `2026-10-04 14:45:27Z`  
+**Run ID**: `run-02` | **Model**: `gemini-1.5-flash` | **Date**: `2026-10-04 14:53:00Z`  
 **Prompt**: `run-02-prompt.txt` (`accuracy-testing/prompts/run-02-prompt.txt`) | **Prompt SHA-256**: `8bd79862a603ba7f1cf1805c672eb02d47b0313a7424c908718a762b41219f39`  
 **Spec Reference**: `gem-scanner-accuracy-test-plan.pdf` (Appendix A & B)
 

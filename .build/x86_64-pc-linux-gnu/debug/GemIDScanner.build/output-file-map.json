@@ -1,0 +1,185 @@
+{
+  "": {
+    "swift-dependencies": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/master.swiftdeps"
+  },
+  "/home/agentv/gem-id-scanner/GemIDScanner/Sources/Database/MineralDatabase.swift": {
+    "dependencies": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/MineralDatabase.d",
+    "object": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/MineralDatabase.swift.o",
+    "swiftmodule": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/MineralDatabase~partial.swiftmodule",
+    "swift-dependencies": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/MineralDatabase.swiftdeps"
+  },
+  "/home/agentv/gem-id-scanner/GemIDScanner/Sources/GemIDScannerApp.swift": {
+    "dependencies": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/GemIDScannerApp.d",
+    "object": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/GemIDScannerApp.swift.o",
+    "swiftmodule": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/GemIDScannerApp~partial.swiftmodule",
+    "swift-dependencies": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/GemIDScannerApp.swiftdeps"
+  },
+  "/home/agentv/gem-id-scanner/GemIDScanner/Sources/Models/ConfidenceBand.swift": {
+    "dependencies": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/ConfidenceBand.d",
+    "object": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/ConfidenceBand.swift.o",
+    "swiftmodule": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/ConfidenceBand~partial.swiftmodule",
+    "swift-dependencies": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/ConfidenceBand.swiftdeps"
+  },
+  "/home/agentv/gem-id-scanner/GemIDScanner/Sources/Models/IdentificationResult.swift": {
+    "dependencies": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/IdentificationResult.d",
+    "object": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/IdentificationResult.swift.o",
+    "swiftmodule": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/IdentificationResult~partial.swiftmodule",
+    "swift-dependencies": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/IdentificationResult.swiftdeps"
+  },
+  "/home/agentv/gem-id-scanner/GemIDScanner/Sources/Models/Lookalike.swift": {
+    "dependencies": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/Lookalike.d",
+    "object": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/Lookalike.swift.o",
+    "swiftmodule": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/Lookalike~partial.swiftmodule",
+    "swift-dependencies": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/Lookalike.swiftdeps"
+  },
+  "/home/agentv/gem-id-scanner/GemIDScanner/Sources/Models/Mineral.swift": {
+    "dependencies": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/Mineral.d",
+    "object": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/Mineral.swift.o",
+    "swiftmodule": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/Mineral~partial.swiftmodule",
+    "swift-dependencies": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/Mineral.swiftdeps"
+  },
+  "/home/agentv/gem-id-scanner/GemIDScanner/Sources/Models/SpecimenRecord.swift": {
+    "dependencies": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/SpecimenRecord.d",
+    "object": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/SpecimenRecord.swift.o",
+    "swiftmodule": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/SpecimenRecord~partial.swiftmodule",
+    "swift-dependencies": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/SpecimenRecord.swiftdeps"
+  },
+  "/home/agentv/gem-id-scanner/GemIDScanner/Sources/Services/CameraService.swift": {
+    "dependencies": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/CameraService.d",
+    "object": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/CameraService.swift.o",
+    "swiftmodule": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/CameraService~partial.swiftmodule",
+    "swift-dependencies": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/CameraService.swiftdeps"
+  },
+  "/home/agentv/gem-id-scanner/GemIDScanner/Sources/Services/CoreMLClassifierService.swift": {
+    "dependencies": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/CoreMLClassifierService.d",
+    "object": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/CoreMLClassifierService.swift.o",
+    "swiftmodule": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/CoreMLClassifierService~partial.swiftmodule",
+    "swift-dependencies": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/CoreMLClassifierService.swiftdeps"
+  },
+  "/home/agentv/gem-id-scanner/GemIDScanner/Sources/Services/CorrectionFeedbackService.swift": {
+    "dependencies": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/CorrectionFeedbackService.d",
+    "object": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/CorrectionFeedbackService.swift.o",
+    "swiftmodule": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/CorrectionFeedbackService~partial.swiftmodule",
+    "swift-dependencies": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/CorrectionFeedbackService.swiftdeps"
+  },
+  "/home/agentv/gem-id-scanner/GemIDScanner/Sources/Services/GeminiVisionService.swift": {
+    "dependencies": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/GeminiVisionService.d",
+    "object": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/GeminiVisionService.swift.o",
+    "swiftmodule": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/GeminiVisionService~partial.swiftmodule",
+    "swift-dependencies": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/GeminiVisionService.swiftdeps"
+  },
+  "/home/agentv/gem-id-scanner/GemIDScanner/Sources/Services/IdentificationCoordinator.swift": {
+    "dependencies": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/IdentificationCoordinator.d",
+    "object": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/IdentificationCoordinator.swift.o",
+    "swiftmodule": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/IdentificationCoordinator~partial.swiftmodule",
+    "swift-dependencies": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/IdentificationCoordinator.swiftdeps"
+  },
+  "/home/agentv/gem-id-scanner/GemIDScanner/Sources/Services/ScanAllowanceManager.swift": {
+    "dependencies": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/ScanAllowanceManager.d",
+    "object": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/ScanAllowanceManager.swift.o",
+    "swiftmodule": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/ScanAllowanceManager~partial.swiftmodule",
+    "swift-dependencies": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/ScanAllowanceManager.swiftdeps"
+  },
+  "/home/agentv/gem-id-scanner/GemIDScanner/Sources/Services/ShareCardGenerator.swift": {
+    "dependencies": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/ShareCardGenerator.d",
+    "object": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/ShareCardGenerator.swift.o",
+    "swiftmodule": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/ShareCardGenerator~partial.swiftmodule",
+    "swift-dependencies": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/ShareCardGenerator.swiftdeps"
+  },
+  "/home/agentv/gem-id-scanner/GemIDScanner/Sources/Services/StoreKitService.swift": {
+    "dependencies": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/StoreKitService.d",
+    "object": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/StoreKitService.swift.o",
+    "swiftmodule": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/StoreKitService~partial.swiftmodule",
+    "swift-dependencies": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/StoreKitService.swiftdeps"
+  },
+  "/home/agentv/gem-id-scanner/GemIDScanner/Sources/Views/AnalyzingView.swift": {
+    "dependencies": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/AnalyzingView.d",
+    "object": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/AnalyzingView.swift.o",
+    "swiftmodule": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/AnalyzingView~partial.swiftmodule",
+    "swift-dependencies": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/AnalyzingView.swiftdeps"
+  },
+  "/home/agentv/gem-id-scanner/GemIDScanner/Sources/Views/BestGuessesView.swift": {
+    "dependencies": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/BestGuessesView.d",
+    "object": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/BestGuessesView.swift.o",
+    "swiftmodule": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/BestGuessesView~partial.swiftmodule",
+    "swift-dependencies": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/BestGuessesView.swiftdeps"
+  },
+  "/home/agentv/gem-id-scanner/GemIDScanner/Sources/Views/CameraHomeView.swift": {
+    "dependencies": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/CameraHomeView.d",
+    "object": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/CameraHomeView.swift.o",
+    "swiftmodule": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/CameraHomeView~partial.swiftmodule",
+    "swift-dependencies": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/CameraHomeView.swiftdeps"
+  },
+  "/home/agentv/gem-id-scanner/GemIDScanner/Sources/Views/CaptureTipsBanner.swift": {
+    "dependencies": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/CaptureTipsBanner.d",
+    "object": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/CaptureTipsBanner.swift.o",
+    "swiftmodule": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/CaptureTipsBanner~partial.swiftmodule",
+    "swift-dependencies": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/CaptureTipsBanner.swiftdeps"
+  },
+  "/home/agentv/gem-id-scanner/GemIDScanner/Sources/Views/CollectionView.swift": {
+    "dependencies": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/CollectionView.d",
+    "object": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/CollectionView.swift.o",
+    "swiftmodule": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/CollectionView~partial.swiftmodule",
+    "swift-dependencies": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/CollectionView.swiftdeps"
+  },
+  "/home/agentv/gem-id-scanner/GemIDScanner/Sources/Views/Components/ConfidenceRingView.swift": {
+    "dependencies": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/ConfidenceRingView.d",
+    "object": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/ConfidenceRingView.swift.o",
+    "swiftmodule": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/ConfidenceRingView~partial.swiftmodule",
+    "swift-dependencies": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/ConfidenceRingView.swiftdeps"
+  },
+  "/home/agentv/gem-id-scanner/GemIDScanner/Sources/Views/Components/LookalikeCardView.swift": {
+    "dependencies": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/LookalikeCardView.d",
+    "object": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/LookalikeCardView.swift.o",
+    "swiftmodule": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/LookalikeCardView~partial.swiftmodule",
+    "swift-dependencies": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/LookalikeCardView.swiftdeps"
+  },
+  "/home/agentv/gem-id-scanner/GemIDScanner/Sources/Views/Components/ReticleOverlayView.swift": {
+    "dependencies": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/ReticleOverlayView.d",
+    "object": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/ReticleOverlayView.swift.o",
+    "swiftmodule": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/ReticleOverlayView~partial.swiftmodule",
+    "swift-dependencies": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/ReticleOverlayView.swiftdeps"
+  },
+  "/home/agentv/gem-id-scanner/GemIDScanner/Sources/Views/Components/SeparatingTestCardView.swift": {
+    "dependencies": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/SeparatingTestCardView.d",
+    "object": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/SeparatingTestCardView.swift.o",
+    "swiftmodule": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/SeparatingTestCardView~partial.swiftmodule",
+    "swift-dependencies": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/SeparatingTestCardView.swiftdeps"
+  },
+  "/home/agentv/gem-id-scanner/GemIDScanner/Sources/Views/CorrectionQueueView.swift": {
+    "dependencies": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/CorrectionQueueView.d",
+    "object": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/CorrectionQueueView.swift.o",
+    "swiftmodule": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/CorrectionQueueView~partial.swiftmodule",
+    "swift-dependencies": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/CorrectionQueueView.swiftdeps"
+  },
+  "/home/agentv/gem-id-scanner/GemIDScanner/Sources/Views/MainTabView.swift": {
+    "dependencies": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/MainTabView.d",
+    "object": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/MainTabView.swift.o",
+    "swiftmodule": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/MainTabView~partial.swiftmodule",
+    "swift-dependencies": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/MainTabView.swiftdeps"
+  },
+  "/home/agentv/gem-id-scanner/GemIDScanner/Sources/Views/MineralDetailView.swift": {
+    "dependencies": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/MineralDetailView.d",
+    "object": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/MineralDetailView.swift.o",
+    "swiftmodule": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/MineralDetailView~partial.swiftmodule",
+    "swift-dependencies": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/MineralDetailView.swiftdeps"
+  },
+  "/home/agentv/gem-id-scanner/GemIDScanner/Sources/Views/PaywallView.swift": {
+    "dependencies": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/PaywallView.d",
+    "object": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/PaywallView.swift.o",
+    "swiftmodule": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/PaywallView~partial.swiftmodule",
+    "swift-dependencies": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/PaywallView.swiftdeps"
+  },
+  "/home/agentv/gem-id-scanner/GemIDScanner/Sources/Views/ResultView.swift": {
+    "dependencies": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/ResultView.d",
+    "object": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/ResultView.swift.o",
+    "swiftmodule": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/ResultView~partial.swiftmodule",
+    "swift-dependencies": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/ResultView.swiftdeps"
+  },
+  "/home/agentv/gem-id-scanner/GemIDScanner/Sources/Views/SettingsView.swift": {
+    "dependencies": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/SettingsView.d",
+    "object": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/SettingsView.swift.o",
+    "swiftmodule": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/SettingsView~partial.swiftmodule",
+    "swift-dependencies": "/home/agentv/gem-id-scanner/.build/x86_64-pc-linux-gnu/debug/GemIDScanner.build/SettingsView.swiftdeps"
+  }
+}

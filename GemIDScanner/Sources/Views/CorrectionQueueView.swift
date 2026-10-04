@@ -235,6 +235,15 @@ private struct CorrectionItemRow: View {
             
             // Predicted -> Corrected Visual Diff
             HStack(spacing: 10) {
+                if let photoData = item.photoData, let uiImage = UIImage(data: photoData) {
+                    Image(uiImage: uiImage)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 44, height: 44)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.white.opacity(0.15), lineWidth: 1))
+                }
+                
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Predicted")
                         .font(.system(size: 10, weight: .bold))

@@ -10,10 +10,14 @@ public struct BestGuessesView: View {
     
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var allowance: ScanAllowanceManager
+    
+    @Query private var existingSpecimens: [SpecimenRecord]
     
     @State private var selectedCandidateIndex: Int = 0
     @State private var showCorrectionSheet = false
     @State private var showDetailSheet = false
+    @State private var showPaywallSheet = false
     @State private var inspectedMineral: Mineral?
     @State private var correctionMineralName = ""
     @State private var correctionNotes = ""
@@ -38,11 +42,11 @@ public struct BestGuessesView: View {
                             .foregroundColor(.coralRed)
                     }
                     
-                    Text("Top 3 Possibilities")
-                        .font(.system(size: 24, weight: .bold, design: .rounded))
+                    Text("Best Guesses")
+                        .font(.system(size: 26, weight: .bold, design: .rounded))
                         .foregroundColor(.white)
                     
-                    Text("Multiple minerals share this color and habit. Use the physical diagnostic tests below to confirm the exact specimen.")
+                    Text("Multiple minerals share this color and crystal habit (<55% confidence). Use the physical diagnostic tests below to confirm the exact specimen.")
                         .font(.system(size: 13))
                         .foregroundColor(.white.opacity(0.75))
                         .multilineTextAlignment(.center)
@@ -50,7 +54,7 @@ public struct BestGuessesView: View {
                 }
                 .padding(.top, 12)
                 
-                // Top Candidates List
+                // Top Candidates List (Top 3)
                 VStack(spacing: 14) {
                     ForEach(Array(result.candidates.prefix(3).enumerated()), id: \.offset) { index, candidate in
                         CandidateOptionCard(
@@ -130,12 +134,16 @@ public struct BestGuessesView: View {
                 }
             }
         }
+        .sheet(isPresented: $showPaywallSheet) {
+            PaywallView()
+        }
         .sheet(isPresented: $showCorrectionSheet) {
             NavigationStack {
                 CorrectionTriggerModalView(
                     predictedMineral: result.topCandidate.mineralName,
                     onSubmitted: { corrected, notes in
                         CorrectionFeedbackService.shared.submitCorrection(
+                            photoData: scannedImage?.jpegData(compressionQuality: 0.8),
                             predicted: result.topCandidate.mineralName,
                             corrected: corrected,
                             notes: notes,
@@ -148,6 +156,11 @@ public struct BestGuessesView: View {
     }
     
     private func saveSelectedCandidate() {
+        guard allowance.canAddToCollection(currentCollectionCount: existingSpecimens.count) else {
+            showPaywallSheet = true
+            return
+        }
+        
         let candidate = result.candidates[min(selectedCandidateIndex, result.candidates.count - 1)]
         let photoData = scannedImage?.jpegData(compressionQuality: 0.8)
         let record = SpecimenRecord(
