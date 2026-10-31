@@ -1,6 +1,6 @@
 # Gem ID Scanner 💎
 
-A state-of-the-art iOS application for mineral, crystal, gemstone, and rock identification built with **SwiftUI**, **SwiftData**, **CoreML**, **Gemini Vision 2.5 Flash**, and **StoreKit 2**.
+A state-of-the-art iOS application for mineral, crystal, gemstone, and rock identification built with **SwiftUI**, **SwiftData**, **on-device Apple Intelligence**, and **StoreKit 2**.
 
 Designed for field geologists, rockhounds, lapidary artisans, jewelers, and nature enthusiasts, Gem ID Scanner pairs lightning-fast on-device neural classification with cloud multimodal AI verification to deliver diagnostic mineralogy guidance.
 
@@ -10,8 +10,8 @@ Designed for field geologists, rockhounds, lapidary artisans, jewelers, and natu
 
 - 📸 **Smart Camera Viewfinder & Real-Time HUD**: Dynamic focus reticle with optical quality warnings (low light, motion blur, glint reflection, macro distance).
 - 🧠 **Dual-Engine Identification Pipeline**:
-  - **Stage 1 (On-Device CoreML)**: Sub-100ms classification on Apple Neural Engine.
-  - **Stage 2 (Gemini Vision 2.5 Flash)**: Multimodal reasoning evaluating crystal habit, cleavage planes, lustre, and color zoning.
+  - **Stage 1 (On-Device Color Shortlist)**: Fast catalog shortlist from specimen color.
+  - **Stage 2 (On-Device Apple Intelligence)**: Foundation Models vision evaluating crystal habit, cleavage, lustre, and lookalikes. Photos stay on the device.
   - **Gemological Confidence Ceiling**: Realistic confidence scores capped at **96%**, honoring the scientific reality that non-destructive optical scans cannot guarantee 100% molecular certainty.
 - 🔬 **Diagnostic Separation Guides**: Multi-candidate disambiguation for visual lookalikes (e.g., *Sodalite vs. Lapis Lazuli*, *Pyrite vs. Chalcopyrite*, *Quartz vs. Topaz*) with physical tests (Mohs hardness, streak plate, UV fluorescence, acid test).
 - 🏺 **SwiftData Specimen Vault**: Organize and catalog personal finds with photos, weights, locality tags, crystal forms (rough, tumbled, faceted, geode), and custom field notes.
@@ -57,9 +57,9 @@ gem-id-scanner/
         │   └── MineralDatabase.swift         # Built-in offline encyclopedia of 500+ species
         ├── Services/
         │   ├── CameraService.swift           # AVFoundation session & image quality analyzer
-        │   ├── CoreMLClassifierService.swift # On-device Stage 1 Neural Engine classifier
+        │   ├── CoreMLClassifierService.swift # On-device Stage 1 color shortlist
         │   ├── CorrectionFeedbackService.swift# Offline correction queue & training telemetry
-        │   ├── GeminiVisionService.swift     # Cloud Stage 2 Multimodal Vision second-opinion
+        │   ├── AppleVisionService.swift      # On-device Foundation Models Stage 2 vision
         │   ├── IdentificationCoordinator.swift# Two-stage orchestration & merge logic
         │   ├── ScanAllowanceManager.swift    # Free tier scan & collection limiter
         │   ├── ShareCardGenerator.swift      # UIGraphics-rendered specimen certificates
@@ -87,11 +87,11 @@ gem-id-scanner/
 
 ## 🛠️ Requirements & Setup
 
-- **iOS Target**: iOS 17.0+ / iPadOS 17.0+
+- **iOS Target**: iOS 26.4+ / iPadOS 26.4+ (Apple Intelligence required for on-device vision)
 - **macOS Target** (Optional Catalyst/Designed for iPad): macOS 14.0+
 - **Xcode Version**: Xcode 15.0+ or Xcode 16+
 - **Swift Version**: Swift 5.9 / Swift 6.0
-- **Frameworks**: SwiftUI, SwiftData, AVFoundation, StoreKit 2, CoreML, Vision, PhotosUI
+- **Frameworks**: SwiftUI, SwiftData, AVFoundation, StoreKit 2, Foundation Models, Vision, PhotosUI
 
 ### Opening in Xcode
 
@@ -103,8 +103,8 @@ gem-id-scanner/
 
 ## 🔐 Privacy & Offline Reliability
 
-- **On-Device First**: Initial classification happens locally using CoreML on the Apple Neural Engine.
-- **Zero Profiling**: Cloud identification via Gemini Vision only transmits specimen imagery for real-time inference without attaching personal identifiers.
+- **On-Device First**: Color shortlist and Apple Intelligence vision both run on the device.
+- **On-Device Vision**: Identification runs with Apple Intelligence on the device. Specimen photos are not uploaded to a cloud identification API.
 - **Offline Vault**: Personal specimen collections, custom notes, and favorite tags are saved locally in the device's private SwiftData storage container.
 - **Opt-in Telemetry**: User-submitted corrections are stored in an offline queue and only uploaded if the user explicitly enables "Contribute to AI Improvement".
 

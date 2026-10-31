@@ -138,14 +138,12 @@ platform :ios do
     app_id = ENV.fetch("APP_IDENTIFIER", "com.gemidscanner.app")
     team_id = ENV.fetch("APPLE_TEAM_ID", "Z2RB57KVQ5")
 
-    gemini_key = options[:gemini_key] || ENV["GEMINI_API_KEY"] || ""
     xcargs_items = [
       "CODE_SIGN_STYLE=Manual",
       "CODE_SIGN_IDENTITY='Apple Distribution'",
       "DEVELOPMENT_TEAM=#{team_id}",
       "PROVISIONING_PROFILE_SPECIFIER='#{app_id} AppStore'"
     ]
-    xcargs_items << "GEMINI_API_KEY='#{gemini_key}'" unless gemini_key.to_s.strip.empty?
 
     gym(
       scheme: scheme,
@@ -195,8 +193,7 @@ platform :ios do
     build_app(
       scheme: "GemIDScanner",
       project: "GemIDScanner.xcodeproj",
-      output_dir: "build/ipa",
-      gemini_key: options[:gemini_key] || ENV["GEMINI_API_KEY"]
+      output_dir: "build/ipa"
     )
 
     # 4. Upload to TestFlight

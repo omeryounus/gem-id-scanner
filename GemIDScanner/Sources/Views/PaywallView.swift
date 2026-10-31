@@ -103,8 +103,8 @@ public struct PaywallView: View {
                             )
                             ProFeatureRow(
                                 icon: "bolt.horizontal.fill",
-                                title: "Instant Dual-Engine AI",
-                                description: "Combines fast on-device optical analyzer with Gemini Vision multimodal cloud intelligence."
+                                title: "On-Device Apple Intelligence",
+                                description: "Identifies stones on this iPhone with Apple Intelligence. Photos stay on the device."
                             )
                         }
                         .padding(.horizontal, 16)

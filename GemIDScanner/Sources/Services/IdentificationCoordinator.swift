@@ -4,7 +4,7 @@ import SwiftUI
 
 /// Orchestrates the two-stage visual identification pipeline:
 /// - Stage 1: Fast on-device color-based shortlist
-/// - Stage 2: Cloud / Multimodal Gemini Vision second-opinion verification
+/// - Stage 2: On-device Apple Foundation Models vision, constrained to the catalog
 ///
 /// Merge Rules:
 /// - Agreement: When Stage 1 and Stage 2 predict the same mineral, the confidence score is
@@ -26,7 +26,7 @@ public final class IdentificationCoordinator: ObservableObject {
         case idle
         case assessingQuality
         case runningStage1OnDevice
-        case runningStage2CloudOpinion
+        case runningStage2OnDevice
         case mergingConfidence
         case complete
         
@@ -35,7 +35,7 @@ public final class IdentificationCoordinator: ObservableObject {
             case .idle: return "Ready"
             case .assessingQuality: return "Evaluating image lighting & sharpness..."
             case .runningStage1OnDevice: return "Building an on-device color shortlist..."
-            case .runningStage2CloudOpinion: return "Consulting Gemini Vision..."
+            case .runningStage2OnDevice: return "Consulting on-device Apple Intelligence..."
             case .mergingConfidence: return "Merging two-stage predictions & calculating confidence..."
             case .complete: return "Identification Complete"
             }
@@ -43,16 +43,16 @@ public final class IdentificationCoordinator: ObservableObject {
     }
     
     private let coreMLService: CoreMLClassifierService
-    private let geminiService: GeminiVisionService
+    private let appleVisionService: AppleVisionService
     private let database: MineralDatabase
     
     public init(
         coreMLService: CoreMLClassifierService = .shared,
-        geminiService: GeminiVisionService = .shared,
+        appleVisionService: AppleVisionService = .shared,
         database: MineralDatabase = .shared
     ) {
         self.coreMLService = coreMLService
-        self.geminiService = geminiService
+        self.appleVisionService = appleVisionService
         self.database = database
     }
     
@@ -69,34 +69,28 @@ public final class IdentificationCoordinator: ObservableObject {
         analysisStep = .runningStage1OnDevice
         let stage1 = try await coreMLService.classify(image: image)
         
-        // 3. Stage 2 Cloud Second Opinion with 6-second timeout
-        analysisStep = .runningStage2CloudOpinion
+        // 3. Stage 2 On-Device Apple Intelligence
+        analysisStep = .runningStage2OnDevice
         let stage2: Stage2Inference
         do {
             stage2 = try await withThrowingTaskGroup(of: Stage2Inference.self) { group in
                 group.addTask {
-                    try await self.geminiService.analyzeSecondOpinion(image: image, stage1Candidate: stage1.topMineralName)
+                    try await self.appleVisionService.analyzeSecondOpinion(image: image, stage1: stage1)
                 }
                 group.addTask {
-                    try await Task.sleep(nanoseconds: 6_000_000_000)
-                    throw NSError(domain: "IdentificationCoordinator", code: 408, userInfo: [NSLocalizedDescriptionKey: "Stage 2 cloud opinion timed out after 6 seconds."])
+                    try await Task.sleep(nanoseconds: 20_000_000_000)
+                    throw NSError(domain: "IdentificationCoordinator", code: 408, userInfo: [NSLocalizedDescriptionKey: "On-device vision timed out after 20 seconds."])
                 }
                 guard let first = try await group.next() else {
-                    throw NSError(domain: "IdentificationCoordinator", code: 500, userInfo: [NSLocalizedDescriptionKey: "No result returned from Stage 2 analysis."])
+                    throw NSError(domain: "IdentificationCoordinator", code: 500, userInfo: [NSLocalizedDescriptionKey: "No result returned from on-device vision analysis."])
                 }
                 group.cancelAll()
                 return first
             }
         } catch {
-            // Stage 2 timeout or offline fallback
-            let fallbackMin = database.find(byName: stage1.topMineralName)
-            stage2 = Stage2Inference(
-                topMineralName: stage1.topMineralName,
-                score: min(stage1.score, 0.35),
-                reasoning: "Gemini vision analysis was unavailable. This is only an on-device color shortlist; verify with physical tests.",
-                visualCuesObserved: ["Central image color compared with the catalog color range"],
-                suggestedTests: fallbackMin?.ruleOutTests.prefix(2).map { String($0) } ?? ["Mohs Hardness Scratch Test"],
-                lookalikeDisambiguation: fallbackMin?.topLookalikes.first.map { "Distinguish from \($0.mineralName): \($0.separatingTest)" }
+            stage2 = appleVisionService.unavailableShortlist(
+                stage1: stage1,
+                explanation: "On-device Apple Intelligence was unavailable. \(error.localizedDescription)"
             )
         }
         
@@ -130,12 +124,12 @@ public final class IdentificationCoordinator: ObservableObject {
         let primaryName: String
         
         if doesAgree {
-            // Agreement: weighted average favoring Stage 2 multimodal reasoning, capped at 96%
+            // Agreement: weighted average favoring Stage 2 vision reasoning, capped at 96%
             let weighted = (stage1.score * 0.35) + (stage2.score * 0.65)
             mergedScore = min(weighted, 0.96)
             primaryName = name1
         } else {
-            // Disagreement: Stage 2 multimodal vision takes precedence as primary,
+            // Disagreement: Stage 2 on-device vision takes precedence as primary,
             // with confidence calibrated down to Likely (55-84%) or Best Guesses (<55%)
             let lowerScore = min(stage1.score, stage2.score)
             mergedScore = min(lowerScore, 0.78)

@@ -12,7 +12,6 @@ public struct SettingsView: View {
     
     @AppStorage("GemIDScanner_AutoTorch") private var autoTorch = false
     @AppStorage("GemIDScanner_HapticFeedback") private var hapticFeedback = true
-    @AppStorage("GemIDScanner_HighPrecisionCloud") private var highPrecisionCloud = true
     
     @State private var showPaywall = false
     @State private var showTerms = false
@@ -24,8 +23,6 @@ public struct SettingsView: View {
     @State private var showZipExportSheet = false
     @State private var syncToastMessage: String?
     @State private var cacheClearedToast = false
-    @State private var geminiAPIKey = GeminiVisionService.shared.customUserKey ?? ""
-    @State private var geminiKeyMessage: String?
     
     public init() {}
     
@@ -116,29 +113,6 @@ public struct SettingsView: View {
                             .padding(.vertical, 6)
                         }
 
-                        HStack {
-                            Button(action: {
-                                allowance.resetAllowances()
-                            }) {
-                                Label("Reset Daily Scans (5/5)", systemImage: "arrow.counterclockwise.circle")
-                                    .font(.system(size: 12, weight: .semibold))
-                                    .foregroundColor(.amberGold)
-                            }
-                            .buttonStyle(.plain)
-                            
-                            Spacer()
-                            
-                            Button(action: {
-                                storeKit.isProPurchased.toggle()
-                                allowance.updateProStatus(isPro: storeKit.isProPurchased)
-                            }) {
-                                Label(storeKit.isProPurchased ? "Revert to Free" : "Unlock Pro Mode", systemImage: storeKit.isProPurchased ? "lock.open" : "crown")
-                                    .font(.system(size: 12, weight: .semibold))
-                                    .foregroundColor(.cyan)
-                            }
-                            .buttonStyle(.plain)
-                        }
-                        .padding(.vertical, 2)
                     } header: {
                         Text("Membership & Allowance")
                     }
@@ -182,48 +156,20 @@ public struct SettingsView: View {
                             }
                         }
                         
-                        // 1-Tap Quick Action Buttons (Sync Now & Export Dataset)
-                        HStack(spacing: 10) {
-                            // 1-Tap Sync Now Button
-                            Button(action: handleSyncNow) {
-                                HStack(spacing: 6) {
-                                    if feedbackService.isSyncing {
-                                        ProgressView().tint(.white)
-                                    } else {
-                                        Image(systemName: "arrow.clockwise.icloud.fill")
-                                        Text("Sync Now")
-                                    }
-                                }
-                                .font(.system(size: 13, weight: .bold))
-                                .foregroundColor(.white)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 10)
-                                .background(feedbackService.pendingCount > 0 ? Color.cyan.opacity(0.3) : Color.white.opacity(0.06))
-                                .clipShape(RoundedRectangle(cornerRadius: 10))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 10)
-                                        .stroke(feedbackService.pendingCount > 0 ? Color.cyan.opacity(0.6) : Color.white.opacity(0.1), lineWidth: 1)
-                                )
+                        Button(action: handleExportDataset) {
+                            HStack(spacing: 6) {
+                                Image(systemName: "square.and.arrow.up.fill")
+                                Text("Export Dataset")
                             }
-                            .buttonStyle(PlainButtonStyle())
-                            .disabled(feedbackService.isSyncing || feedbackService.pendingCount == 0)
-                            
-                            // 1-Tap Export Dataset Button
-                            Button(action: handleExportDataset) {
-                                HStack(spacing: 6) {
-                                    Image(systemName: "square.and.arrow.up.fill")
-                                    Text("Export Dataset")
-                                }
-                                .font(.system(size: 13, weight: .bold))
-                                .foregroundColor(.black)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 10)
-                                .background(feedbackService.queuedCorrections.isEmpty ? Color.white.opacity(0.2) : Color.amberGold)
-                                .clipShape(RoundedRectangle(cornerRadius: 10))
-                            }
-                            .buttonStyle(PlainButtonStyle())
-                            .disabled(feedbackService.queuedCorrections.isEmpty)
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundColor(.black)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 10)
+                            .background(feedbackService.queuedCorrections.isEmpty ? Color.white.opacity(0.2) : Color.amberGold)
+                            .clipShape(RoundedRectangle(cornerRadius: 10))
                         }
+                        .buttonStyle(PlainButtonStyle())
+                        .disabled(feedbackService.queuedCorrections.isEmpty)
                         .padding(.vertical, 2)
                         
                         // Queue Inspector Navigation Link
@@ -254,7 +200,7 @@ public struct SettingsView: View {
                     } header: {
                         Text("Beta Corrections & Training Pipeline")
                     } footer: {
-                        Text("Dataset export includes structured JSON metadata with pred_1..pred_3 probabilities, prompt SHA-256 (\(String(GeminiVisionService.promptSHA256.prefix(8)))), verification basis, and full-resolution specimen JPEG images.")
+                        Text("Dataset export includes structured JSON metadata with pred_1..pred_3 probabilities, prompt SHA-256 (\(String(AppleVisionService.promptSHA256.prefix(8)))), verification basis, and full-resolution specimen JPEG images.")
                             .font(.system(size: 11))
                             .foregroundColor(.white.opacity(0.4))
                     }
@@ -273,93 +219,18 @@ public struct SettingsView: View {
                                 .foregroundColor(.white)
                         }
                         .tint(.amberGold)
-                        
-                        Toggle(isOn: $highPrecisionCloud) {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Label("High-Precision Multimodal AI", systemImage: "sparkles")
-                                    .foregroundColor(.white)
-                                Text("Uses Gemini \(GeminiVisionService.modelName) for image analysis when an API key is configured.")
-                                    .font(.system(size: 11))
-                                    .foregroundColor(.white.opacity(0.6))
-                            }
-                        }
-                        .tint(.cyan)
                     }
                     .listRowBackground(Color.white.opacity(0.04))
                     
-                    // MARK: - Gemini Vision Configuration
-                    Section("Gemini Vision") {
-                        if GeminiVisionService.shared.hasCustomUserKey {
-                            HStack(spacing: 6) {
-                                Image(systemName: "checkmark.seal.fill")
-                                    .foregroundColor(.emeraldGreen)
-                                Text("Custom API key active on this device.")
-                                    .font(.system(size: 11, weight: .medium))
-                                    .foregroundColor(.emeraldGreen)
-                            }
-                        } else if GeminiVisionService.shared.bundledKey != nil {
-                            HStack(spacing: 6) {
-                                Image(systemName: "checkmark.shield.fill")
-                                    .foregroundColor(.cyan)
-                                Text("Pre-configured build key active (\(GeminiVisionService.modelName)).")
-                                    .font(.system(size: 11, weight: .medium))
-                                    .foregroundColor(.cyan)
-                            }
-                        } else {
-                            HStack(spacing: 6) {
-                                Image(systemName: "exclamationmark.triangle.fill")
-                                    .foregroundColor(.amberGold)
-                                Text("No API key configured. Scans will use color shortlist only.")
-                                    .font(.system(size: 11, weight: .medium))
-                                    .foregroundColor(.amberGold)
-                            }
+                    Section("On-Device Identification") {
+                        HStack(alignment: .top, spacing: 8) {
+                            Image(systemName: AppleVisionService.shared.isVisionAvailable ? "checkmark.seal.fill" : "exclamationmark.triangle.fill")
+                                .foregroundColor(AppleVisionService.shared.isVisionAvailable ? .emeraldGreen : .amberGold)
+                            Text(AppleVisionService.shared.availabilitySummary)
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundColor(.white.opacity(0.85))
                         }
-
-                        SecureField(GeminiVisionService.shared.bundledKey != nil ? "Enter custom key to override" : "Gemini API key", text: $geminiAPIKey)
-                            .textInputAutocapitalization(.never)
-                            .autocorrectionDisabled()
-                            .textContentType(.password)
-                            .foregroundColor(.white)
-
-                        HStack {
-                            Button("Save API Key") {
-                                let trimmedKey = geminiAPIKey.trimmingCharacters(in: .whitespacesAndNewlines)
-                                guard !trimmedKey.isEmpty else {
-                                    geminiKeyMessage = "Enter an API key first."
-                                    return
-                                }
-
-                                GeminiVisionService.shared.apiKey = trimmedKey
-                                if GeminiVisionService.shared.hasCustomUserKey {
-                                    geminiAPIKey = trimmedKey
-                                    geminiKeyMessage = "Custom API key saved securely on this device."
-                                } else {
-                                    geminiKeyMessage = "Could not save the API key to Keychain."
-                                }
-                            }
-                            .foregroundColor(.cyan)
-
-                            Spacer()
-
-                            if GeminiVisionService.shared.hasCustomUserKey {
-                                Button(GeminiVisionService.shared.bundledKey != nil ? "Reset to Default" : "Remove") {
-                                    GeminiVisionService.shared.apiKey = nil
-                                    geminiAPIKey = ""
-                                    geminiKeyMessage = GeminiVisionService.shared.bundledKey != nil
-                                        ? "Reverted to pre-configured build key."
-                                        : "Custom API key removed. Scans will use the color shortlist only."
-                                }
-                                .foregroundColor(.coralRed)
-                            }
-                        }
-
-                        if let geminiKeyMessage {
-                            Text(geminiKeyMessage)
-                                .font(.system(size: 11))
-                                .foregroundColor(.white.opacity(0.65))
-                        }
-
-                        Text("Scanned images are sent to Google for Gemini Vision multimodal analysis. When no key is active, scans revert to on-device color suggestions.")
+                        Text("Identification uses Apple Intelligence on this device. Specimen photos are not sent to a cloud API.")
                             .font(.system(size: 11))
                             .foregroundColor(.white.opacity(0.6))
                     }
@@ -403,7 +274,7 @@ public struct SettingsView: View {
                             Text("Classification Core")
                                 .foregroundColor(.white)
                             Spacer()
-                            Text("Color shortlist + Gemini \(GeminiVisionService.modelName)")
+                            Text("Color shortlist + \(AppleVisionService.modelName)")
                                 .font(.system(size: 12, design: .monospaced))
                                 .foregroundColor(.white.opacity(0.6))
                         }
@@ -495,19 +366,6 @@ public struct SettingsView: View {
                     .padding(.bottom, 24)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
-            }
-        }
-    }
-    
-    private func handleSyncNow() {
-        Task {
-            let result = await feedbackService.syncPendingCorrections()
-            withAnimation {
-                syncToastMessage = "Synced \(result.synced) correction\(result.synced == 1 ? "" : "s") successfully!"
-            }
-            try? await Task.sleep(nanoseconds: 2_500_000_000)
-            withAnimation {
-                syncToastMessage = nil
             }
         }
     }

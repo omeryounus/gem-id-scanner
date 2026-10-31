@@ -1,12 +1,12 @@
-// swift-tools-version: 5.9
+// swift-tools-version: 6.2
 import PackageDescription
 
 let package = Package(
     name: "GemIDScanner",
     defaultLocalization: "en",
     platforms: [
-        .iOS(.v17),
-        .macOS(.v14)
+        .iOS(.v26),
+        .macOS(.v26)
     ],
     products: [
         .library(

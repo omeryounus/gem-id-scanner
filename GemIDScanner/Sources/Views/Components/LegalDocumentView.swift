@@ -60,8 +60,8 @@ public enum LegalDocumentContent {
     1. ON-DEVICE PROCESSING FIRST
     Specimen color analysis and collection storage run entirely on-device using local storage.
 
-    2. MULTIMODAL VISION AI
-    When High-Precision Multimodal AI is active, specimen images are securely sent to Google Gemini API for second-opinion visual analysis.
+    2. ON-DEVICE APPLE INTELLIGENCE
+    Specimen photos are analyzed on this device with Apple Intelligence. Images are not uploaded to a cloud identification API.
 
     3. BETA MODEL IMPROVEMENT OPT-IN
     Contributing specimen corrections to model improvement is entirely optional and defaults to OFF. Images and diagnostic feedback are only shared when explicitly opted in by the user.

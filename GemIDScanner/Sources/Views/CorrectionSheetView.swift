@@ -112,7 +112,7 @@ public struct CorrectionSheetView: View {
                     .font(.system(size: 11, weight: .heavy, design: .monospaced))
                     .foregroundColor(.cyan)
                 Spacer()
-                Text("SHA-256: \(String(GeminiVisionService.promptSHA256.prefix(8)))")
+                Text("SHA-256: \(String(AppleVisionService.promptSHA256.prefix(8)))")
                     .font(.system(size: 10, weight: .medium, design: .monospaced))
                     .foregroundColor(.white.opacity(0.4))
             }

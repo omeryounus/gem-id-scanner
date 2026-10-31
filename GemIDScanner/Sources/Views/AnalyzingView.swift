@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Screen 3: Animated radar scan view displaying two-stage neural & cloud progress steps.
+/// Screen 3: Animated radar scan view displaying two-stage on-device progress steps.
 public struct AnalyzingView: View {
     public let image: UIImage?
     public let onComplete: (IdentificationResult) -> Void
@@ -29,7 +29,7 @@ public struct AnalyzingView: View {
                         .tracking(2.0)
                         .foregroundColor(.cyan)
                     
-                    Text("Two-Stage Dual Intelligence")
+                    Text("On-Device Identification")
                         .font(.system(size: 22, weight: .bold, design: .rounded))
                         .foregroundColor(.white)
                 }
@@ -90,14 +90,14 @@ public struct AnalyzingView: View {
                         title: "2. Stage 1: On-Device Optical Analyzer (<100ms)",
                         subtitle: "Color signature shortlist on 60-mineral catalog",
                         isCurrent: coordinator.analysisStep == .runningStage1OnDevice,
-                        isDone: coordinator.analysisStep == .runningStage2CloudOpinion || coordinator.analysisStep == .mergingConfidence || coordinator.analysisStep == .complete
+                        isDone: coordinator.analysisStep == .runningStage2OnDevice || coordinator.analysisStep == .mergingConfidence || coordinator.analysisStep == .complete
                     )
                     
                     StepRowView(
-                        icon: "cloud.fill",
-                        title: "3. Stage 2: Multimodal Gemini Opinion",
+                        icon: "apple.intelligence",
+                        title: "3. Stage 2: On-Device Apple Intelligence",
                         subtitle: "Crystal habit, luster, and lookalike analysis",
-                        isCurrent: coordinator.analysisStep == .runningStage2CloudOpinion,
+                        isCurrent: coordinator.analysisStep == .runningStage2OnDevice,
                         isDone: coordinator.analysisStep == .mergingConfidence || coordinator.analysisStep == .complete
                     )
                     
