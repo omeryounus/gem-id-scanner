@@ -104,7 +104,7 @@ public struct PaywallView: View {
                             ProFeatureRow(
                                 icon: "bolt.horizontal.fill",
                                 title: "Hybrid Identification",
-                                description: "Apple Intelligence ranks the stone on this iPhone. Uncertain photos go to Gemini through Firebase AI Logic."
+                                description: "Each scan sends the photo to Gemini through Firebase AI Logic. Apple Intelligence is the fallback."
                             )
                         }
                         .padding(.horizontal, 16)

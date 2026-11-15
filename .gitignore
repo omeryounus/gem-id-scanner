@@ -18,3 +18,5 @@ fastlane/README.md
 *GeminiConfig*.plist
 *Secrets*.plist
 GoogleService-Info.plist
+.venv/
+uploads/

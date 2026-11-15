@@ -10,9 +10,8 @@ import FoundationModels
 /// Stage 2 identification through Firebase AI Logic hybrid inference.
 ///
 /// A capable device ranks an on-device color brief with Apple's Foundation
-/// Model, and the photo stays on the phone. If that model is unavailable, or
-/// the text-only rank is too uncertain, Gemini sees the photo through Firebase
-/// AI Logic.
+/// Model. That rank is only a fallback. Gemini sees the photo through Firebase
+/// AI Logic on every scan.
 public final class AppleVisionService: @unchecked Sendable {
     public static let shared = AppleVisionService()
     public static let modelName = "Firebase AI Logic"
@@ -84,7 +83,7 @@ public final class AppleVisionService: @unchecked Sendable {
         if #available(iOS 26.4, *) {
             switch SystemLanguageModel.default.availability {
             case .available:
-                return "Apple Intelligence is ready. A confident color rank stays on this iPhone. Uncertain stones are sent to Gemini."
+                return "The photo is sent to Gemini through Firebase AI Logic. Apple Intelligence ranks the color on this iPhone if Gemini does not answer."
             case .unavailable(.deviceNotEligible):
                 return "This iPhone cannot run the on-device model. Scans use Gemini through Firebase AI Logic."
             case .unavailable(.appleIntelligenceNotEnabled):
@@ -99,7 +98,7 @@ public final class AppleVisionService: @unchecked Sendable {
         return "Hybrid identification is ready through Firebase AI Logic."
     }
 
-    /// Ranks a specimen with Firebase AI Logic. Photos leave the device only for the cloud path.
+    /// Ranks a specimen with Firebase AI Logic. The photo is sent to Gemini.
     public func analyzeSecondOpinion(image: UIImage, stage1: Stage1Inference) async throws -> Stage2Inference {
         guard FirebaseBootstrap.isConfigured else {
             return unavailableShortlist(
@@ -133,9 +132,6 @@ public final class AppleVisionService: @unchecked Sendable {
                     modelVersion: ranked.modelVersion,
                     photoLeftDevice: false
                 )
-                if route == "on_device" && mapped.score >= settings.escalationThreshold {
-                    return mapped
-                }
                 onDeviceAnswer = mapped
             } catch {
                 onDeviceAnswer = nil

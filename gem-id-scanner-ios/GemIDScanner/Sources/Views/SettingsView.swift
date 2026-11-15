@@ -230,7 +230,7 @@ public struct SettingsView: View {
                                 .font(.system(size: 13, weight: .medium))
                                 .foregroundColor(.white.opacity(0.85))
                         }
-                        Text("A confident on-device rank keeps the photo on this iPhone. If Apple Intelligence is unavailable, or the rank is below the escalation threshold, the photo is sent to Gemini through Firebase AI Logic.")
+                        Text("Each scan sends the photo to Gemini through Firebase AI Logic. If Gemini does not answer, the result falls back to the on-device color rank.")
                             .font(.system(size: 11))
                             .foregroundColor(.white.opacity(0.6))
                     }

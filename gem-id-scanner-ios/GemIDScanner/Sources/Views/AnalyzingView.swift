@@ -96,7 +96,7 @@ public struct AnalyzingView: View {
                     StepRowView(
                         icon: "apple.intelligence",
                         title: "3. Stage 2: Firebase AI Logic",
-                        subtitle: "On-device Apple Intelligence, then Gemini if needed",
+                        subtitle: "Gemini sees the photo. On-device color rank is the fallback",
                         isCurrent: coordinator.analysisStep == .runningStage2OnDevice,
                         isDone: coordinator.analysisStep == .mergingConfidence || coordinator.analysisStep == .complete
                     )

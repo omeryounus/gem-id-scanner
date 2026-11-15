@@ -43,6 +43,7 @@ enum FirebaseBootstrap {
         state.lock.unlock()
 
         #if DEBUG
+        installDebugAppCheckToken()
         AppCheck.setAppCheckProviderFactory(AppCheckDebugProviderFactory())
         #else
         AppCheck.setAppCheckProviderFactory(GemAppCheckProviderFactory())
@@ -54,6 +55,19 @@ enum FirebaseBootstrap {
         state.statusMessage = "Firebase AI Logic is configured."
         state.lock.unlock()
     }
+
+    #if DEBUG
+    /// Home-screen launches do not receive the Xcode scheme environment.
+    /// A debug install can supply the registered token in Info.plist.
+    private static func installDebugAppCheckToken() {
+        guard getenv("FIRAAppCheckDebugToken") == nil,
+              let token = Bundle.main.object(forInfoDictionaryKey: "FirebaseAppCheckDebugToken") as? String,
+              !token.isEmpty,
+              !token.contains("REPLACE")
+        else { return }
+        setenv("FIRAAppCheckDebugToken", token, 0)
+    }
+    #endif
 
     private static func bundledOptions() -> FirebaseOptions? {
         guard let url = Bundle.main.url(forResource: "GoogleService-Info", withExtension: "plist"),

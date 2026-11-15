@@ -61,7 +61,7 @@ public enum LegalDocumentContent {
     Specimen color analysis and collection storage run entirely on-device using local storage.
 
     2. HYBRID IDENTIFICATION
-    When Apple Intelligence can rank the specimen, Firebase AI Logic runs that model on this iPhone and the photo stays on the device. The photo is sent to Gemini through Firebase AI Logic only when the on-device model is unavailable or its confidence is below the escalation threshold.
+    Each scan sends the photograph to Gemini through Firebase AI Logic. Apple Intelligence may also rank the measured color on this iPhone, and that rank is used only when Gemini does not return one.
 
     3. BETA MODEL IMPROVEMENT OPT-IN
     Contributing corrections is optional and defaults to OFF. When it is on, the app signs in anonymously and uploads labels only: the predicted names, your correction, and a prompt hash. Specimen photos are not included.

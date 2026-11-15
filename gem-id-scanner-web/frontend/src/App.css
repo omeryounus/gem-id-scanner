@@ -1,0 +1,146 @@
+/* View transitions between routes (Chrome modern web guidance) */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 220ms;
+  animation-timing-function: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+::view-transition-old(root) {
+  animation-name: vt-out;
+}
+::view-transition-new(root) {
+  animation-name: vt-in;
+}
+@keyframes vt-out {
+  to {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+@keyframes vt-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.rise {
+  animation: rise 480ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+@keyframes scan {
+  0% {
+    top: 0%;
+  }
+  50% {
+    top: 100%;
+  }
+  100% {
+    top: 0%;
+  }
+}
+.scanline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #f59e0b;
+  box-shadow: 0 0 24px 6px rgba(245, 158, 11, 0.55);
+  animation: scan 2.2s ease-in-out infinite;
+}
+
+.grid-bench {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+.card-cq {
+  container-type: inline-size;
+}
+@container (max-width: 220px) {
+  .cq-hide {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* Theme switch: circular reveal handled in JS */
+.theme-vt::view-transition-old(root),
+.theme-vt::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+.theme-vt::view-transition-new(root) {
+  z-index: 2;
+}
+
+@media print {
+  body::after {
+    display: none;
+  }
+}
+
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  background: hsl(var(--popover));
+  color: hsl(var(--popover-foreground));
+  border: 1px solid hsl(var(--border));
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+}
+.leaflet-container {
+  font-family: inherit;
+  background: #0f1114;
+}
+.leaflet-control-attribution {
+  background: hsl(var(--card) / 0.8) !important;
+  color: hsl(var(--muted-foreground)) !important;
+}
+.leaflet-control-attribution a {
+  color: hsl(var(--primary)) !important;
+}
+.leaflet-bar a {
+  background: hsl(var(--card)) !important;
+  color: hsl(var(--foreground)) !important;
+  border-color: hsl(var(--border)) !important;
+}
+
+@media print {
+  @page {
+    margin: 8mm;
+  }
+  .label-card {
+    break-inside: avoid;
+  }
+  .labels-sheet {
+    max-width: none;
+    padding: 0;
+  }
+}
+
+/* Night view: darken OSM tiles */
+.dark .leaflet-tile-pane {
+  filter: invert(1) hue-rotate(180deg) brightness(0.82) contrast(0.92) saturate(0.55);
+}
+
+.placing .leaflet-container {
+  cursor: crosshair;
+}

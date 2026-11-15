@@ -12,6 +12,20 @@ public enum CameraQualityWarning: String, CaseIterable, Sendable {
     case tooFar = "Move closer - fill the frame"
 }
 
+public enum CameraCaptureError: LocalizedError, Sendable {
+    case sessionNotRunning
+    case noVideoConnection
+
+    public var errorDescription: String? {
+        switch self {
+        case .sessionNotRunning:
+            return "The camera is not ready yet."
+        case .noVideoConnection:
+            return "No active camera connection is available."
+        }
+    }
+}
+
 public struct ImageQualityAssessment: Sendable {
     public let isAcceptable: Bool
     public let warnings: [CameraQualityWarning]
@@ -120,8 +134,9 @@ public final class CameraService: NSObject, ObservableObject {
         guard !session.isRunning else { return }
         Task.detached(priority: .userInitiated) { [weak self] in
             self?.session.startRunning()
+            let running = self?.session.isRunning ?? false
             await MainActor.run {
-                self?.isSessionRunning = true
+                self?.isSessionRunning = running
             }
         }
     }
@@ -154,16 +169,27 @@ public final class CameraService: NSObject, ObservableObject {
     }
     
     public func capturePhoto() async throws -> UIImage {
+        // capturePhotoWithSettings: throws NSInvalidArgumentException, which
+        // Swift do/catch cannot handle. Reject those cases before the call.
+        guard session.isRunning else {
+            throw CameraCaptureError.sessionNotRunning
+        }
+        guard let connection = photoOutput.connection(with: .video),
+              connection.isEnabled,
+              connection.isActive else {
+            throw CameraCaptureError.noVideoConnection
+        }
+
+        let photoSettings = AVCapturePhotoSettings()
+        if photoOutput.isHighResolutionCaptureEnabled {
+            photoSettings.isHighResolutionPhotoEnabled = true
+        }
+        if photoOutput.supportedFlashModes.contains(.auto) {
+            photoSettings.flashMode = .auto
+        }
+
         return try await withCheckedThrowingContinuation { continuation in
             self.captureContinuation = continuation
-            var photoSettings = AVCapturePhotoSettings()
-            if photoOutput.availablePhotoCodecTypes.contains(.hevc) {
-                photoSettings = AVCapturePhotoSettings(format: [AVVideoCodecKey: AVVideoCodecType.hevc])
-            }
-            photoSettings.isHighResolutionPhotoEnabled = true
-            if let device = activeDevice, device.hasFlash {
-                photoSettings.flashMode = .auto
-            }
             photoOutput.capturePhoto(with: photoSettings, delegate: self)
         }
     }

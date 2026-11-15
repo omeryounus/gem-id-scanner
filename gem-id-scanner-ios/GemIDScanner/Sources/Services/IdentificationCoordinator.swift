@@ -4,8 +4,8 @@ import SwiftUI
 
 /// Orchestrates the two-stage visual identification pipeline:
 /// - Stage 1: Fast on-device color-based shortlist
-/// - Stage 2: Firebase AI Logic. On-device Apple Intelligence when it can rank
-///   the color brief, otherwise Gemini. The photo is uploaded only for cloud vision.
+/// - Stage 2: Firebase AI Logic. Gemini sees the photo. Apple Intelligence
+///   ranks the color brief and is kept only when Gemini does not answer.
 ///
 /// Merge Rules:
 /// - Agreement: When Stage 1 and Stage 2 predict the same mineral, the confidence score is
@@ -36,7 +36,7 @@ public final class IdentificationCoordinator: ObservableObject {
             case .idle: return "Ready"
             case .assessingQuality: return "Evaluating image lighting & sharpness..."
             case .runningStage1OnDevice: return "Building an on-device color shortlist..."
-            case .runningStage2OnDevice: return "Asking Firebase AI Logic. On-device first, Gemini if needed..."
+            case .runningStage2OnDevice: return "Sending the photo to Gemini through Firebase AI Logic..."
             case .mergingConfidence: return "Merging two-stage predictions & calculating confidence..."
             case .complete: return "Identification Complete"
             }

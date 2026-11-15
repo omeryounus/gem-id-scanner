@@ -1,0 +1,129 @@
+@import url("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    :root {
+        --background: 220 12% 5%;
+        --foreground: 210 20% 97%;
+        --card: 222 14% 8%;
+        --card-foreground: 210 20% 97%;
+        --popover: 222 16% 10%;
+        --popover-foreground: 210 20% 97%;
+        --primary: 38 92% 50%;
+        --primary-foreground: 30 40% 6%;
+        --secondary: 222 16% 12%;
+        --secondary-foreground: 210 20% 97%;
+        --muted: 222 16% 12%;
+        --muted-foreground: 218 11% 63%;
+        --accent: 222 16% 14%;
+        --accent-foreground: 210 20% 97%;
+        --destructive: 0 72% 51%;
+        --destructive-foreground: 0 0% 98%;
+        --border: 223 15% 17%;
+        --input: 223 15% 19%;
+        --ring: 38 92% 50%;
+        --radius: 0.6rem;
+        --ink: 255 255 255;
+        --sidebar: 225 12% 6%;
+        color-scheme: dark;
+    }
+    .light {
+        --background: 42 30% 94%;
+        --foreground: 30 12% 10%;
+        --card: 45 40% 98%;
+        --card-foreground: 30 12% 10%;
+        --popover: 45 40% 99%;
+        --popover-foreground: 30 12% 10%;
+        --primary: 32 95% 44%;
+        --primary-foreground: 0 0% 100%;
+        --secondary: 40 22% 89%;
+        --secondary-foreground: 30 12% 10%;
+        --muted: 40 22% 89%;
+        --muted-foreground: 30 8% 38%;
+        --accent: 40 22% 87%;
+        --accent-foreground: 30 12% 10%;
+        --destructive: 0 72% 46%;
+        --destructive-foreground: 0 0% 98%;
+        --border: 38 18% 82%;
+        --input: 38 18% 78%;
+        --ring: 32 95% 44%;
+        --ink: 40 30 15;
+        --sidebar: 42 28% 91%;
+        color-scheme: light;
+    }
+}
+
+@layer base {
+    * {
+        @apply border-border;
+    }
+    html {
+        scrollbar-color: #272b35 transparent;
+    }
+    body {
+        @apply bg-background text-foreground antialiased;
+        margin: 0;
+        font-family: "IBM Plex Sans", system-ui, sans-serif;
+        font-feature-settings: "ss01", "tnum";
+    }
+    body::after {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 100;
+        opacity: 0.035;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+    ::selection {
+        background: rgba(245, 158, 11, 0.35);
+        color: inherit;
+    }
+    .light body::after {
+        opacity: 0.05;
+    }
+    .light .text-sky-300 { color: #0369a1; }
+    .light .text-emerald-300 { color: #047857; }
+    .light .text-amber-300 { color: #b45309; }
+    .light .text-red-300 { color: #b91c1c; }
+    .light .leaflet-container { background: #ece6d8; }
+    :focus-visible {
+        outline: 2px solid hsl(var(--ring));
+        outline-offset: 2px;
+    }
+}
+
+@layer base {
+    [data-debug-wrapper="true"] {
+        display: contents !important;
+    }
+
+    [data-debug-wrapper="true"] > * {
+        margin-left: inherit;
+        margin-right: inherit;
+        margin-top: inherit;
+        margin-bottom: inherit;
+        padding-left: inherit;
+        padding-right: inherit;
+        padding-top: inherit;
+        padding-bottom: inherit;
+        column-gap: inherit;
+        row-gap: inherit;
+        gap: inherit;
+        border-left-width: inherit;
+        border-right-width: inherit;
+        border-top-width: inherit;
+        border-bottom-width: inherit;
+        border-left-style: inherit;
+        border-right-style: inherit;
+        border-top-style: inherit;
+        border-bottom-style: inherit;
+        border-left-color: inherit;
+        border-right-color: inherit;
+        border-top-color: inherit;
+        border-bottom-color: inherit;
+    }
+}
