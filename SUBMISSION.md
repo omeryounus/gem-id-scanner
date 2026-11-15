@@ -52,13 +52,13 @@ Say in the video, in one sentence, that Stage 2 is Firebase AI Logic choosing on
 
 ## Checklist before you submit
 
-- [ ] Create the Firebase project and download `GoogleService-Info.plist` into `GemIDScanner/Resources/`. Confirm it is not committed.
+- [ ] Create the Firebase project and download `GoogleService-Info.plist` into `gem-id-scanner-ios/GemIDScanner/Resources/`. Confirm it is not committed.
 - [ ] Enable the Gemini Developer API for Firebase AI Logic.
 - [ ] Enforce App Check for Firebase AI Logic. Register the debug token from the first debug launch. Do not commit the token.
 - [ ] Enable Anonymous Authentication.
-- [ ] Deploy `firebase/firestore.rules`.
+- [ ] Deploy `gem-id-scanner-backend/firebase/firestore.rules`.
 - [ ] Publish Remote Config: `gemini_model_name` = `gemini-3.5-flash-lite`, `cloud_escalation_threshold` = `0.55`.
-- [ ] On a Mac, run `xcodegen generate`, build with Xcode 26, and scan once on device for each route above.
+- [ ] On a Mac, from `gem-id-scanner-ios`, run `xcodegen generate`, build with Xcode 26, and scan once on device for each route above.
 - [ ] Make https://github.com/omeryounus/gem-id-scanner public.
 - [ ] Set the GitHub About license to Apache-2.0 so it is visible without opening `LICENSE`.
 - [ ] Publish the YouTube video and paste the URL into Devpost.

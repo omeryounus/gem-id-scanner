@@ -21,6 +21,9 @@ jobs:
     name: Build & Upload to TestFlight
     runs-on: macos-26
     timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: gem-id-scanner-ios
 
     steps:
       - name: Checkout Repository
@@ -240,7 +243,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: GemIDScanner-ipa
-          path: build/ipa/*.ipa
+          path: gem-id-scanner-ios/build/ipa/*.ipa
           if-no-files-found: ignore
           retention-days: 14
 

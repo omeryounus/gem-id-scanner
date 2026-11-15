@@ -134,7 +134,7 @@ When a user selects *"None of these match"* or overrides a prediction:
    - Field observations & Diagnostic Notes
    - Timestamp & UUID
 2. The item is saved to local device storage (`UserDefaults` JSON array) for offline resilience.
-3. From [`CorrectionQueueView.swift`](GemIDScanner/Sources/Views/CorrectionQueueView.swift) the user can sync the queue. If Firebase is configured and **Contribute to AI Improvement** is on, `CorrectionCloudSync` signs in with anonymous Authentication and writes `corrections/{id}` in Firestore. The document holds labels only. Photo bytes stay on the device. Rules are in [`firebase/firestore.rules`](firebase/firestore.rules).
+3. From [`CorrectionQueueView.swift`](GemIDScanner/Sources/Views/CorrectionQueueView.swift) the user can sync the queue. If Firebase is configured and **Contribute to AI Improvement** is on, `CorrectionCloudSync` signs in with anonymous Authentication and writes `corrections/{id}` in Firestore. The document holds labels only. Photo bytes stay on the device. Rules are in [`firebase/firestore.rules`](../gem-id-scanner-backend/firebase/firestore.rules).
 4. If Firebase is not configured and a webhook URL was set, the older webhook upload still runs. A local zip export can still include the JPEGs. That file never leaves the device unless the user shares it.
 
 ---

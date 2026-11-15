@@ -15,6 +15,9 @@ jobs:
     name: Compile unsigned simulator build
     runs-on: macos-26
     timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: gem-id-scanner-ios
 
     steps:
       - name: Checkout Repository

@@ -1,0 +1,411 @@
+openapi: 3.0.3
+info:
+  title: Gem ID Scanner API
+  version: 0.1.0
+  description: >
+    Catalog, gallery, specimen records, and identification analyses for the
+    web, Android, and iOS clients. Confidence is never above 0.96. Mineral
+    names come from the curated catalog.
+servers:
+  - url: http://localhost:8080
+paths:
+  /v1/session:
+    post:
+      summary: Start an anonymous session
+      operationId: createSession
+      responses:
+        "201":
+          description: Session token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
+  /v1/minerals:
+    get:
+      summary: List the catalog
+      operationId: listMinerals
+      parameters:
+        - in: query
+          name: q
+          schema: { type: string }
+        - in: query
+          name: category
+          schema: { type: string }
+      responses:
+        "200":
+          description: Catalog page
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [minerals]
+                properties:
+                  minerals:
+                    type: array
+                    items: { $ref: "#/components/schemas/Mineral" }
+  /v1/minerals/{name}:
+    get:
+      summary: One catalog entry
+      operationId: getMineral
+      parameters:
+        - in: path
+          name: name
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Mineral
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Mineral" }
+        "404":
+          description: Unknown name
+  /v1/analyses:
+    get:
+      summary: Analyses for the current session, newest first
+      operationId: listAnalyses
+      responses:
+        "200":
+          description: Analyses
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [analyses]
+                properties:
+                  analyses:
+                    type: array
+                    items: { $ref: "#/components/schemas/Analysis" }
+    post:
+      summary: Identify a photo
+      operationId: createAnalysis
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [image]
+              properties:
+                image:
+                  type: string
+                  format: binary
+                source:
+                  type: string
+                  enum: [ios, android, web]
+      responses:
+        "201":
+          description: Analysis
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Analysis" }
+  /v1/analyses/{id}:
+    get:
+      summary: One analysis, including stage detail
+      operationId: getAnalysis
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Analysis
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Analysis" }
+  /v1/records:
+    get:
+      summary: Saved specimens for the current session
+      operationId: listRecords
+      responses:
+        "200":
+          description: Records
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [records]
+                properties:
+                  records:
+                    type: array
+                    items: { $ref: "#/components/schemas/SpecimenRecord" }
+    post:
+      summary: Save a specimen, usually from an analysis
+      operationId: createRecord
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SpecimenRecordInput" }
+      responses:
+        "201":
+          description: Record
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SpecimenRecord" }
+  /v1/records/{id}:
+    get:
+      summary: One specimen
+      operationId: getRecord
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Record
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SpecimenRecord" }
+    patch:
+      summary: Update notes, form, tags, and confirmation
+      operationId: updateRecord
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SpecimenRecordInput" }
+      responses:
+        "200":
+          description: Record
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SpecimenRecord" }
+    delete:
+      summary: Delete a specimen
+      operationId: deleteRecord
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "204":
+          description: Deleted
+  /v1/gallery:
+    get:
+      summary: Specimen photos for the current session
+      operationId: listGallery
+      responses:
+        "200":
+          description: Gallery items
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/GalleryItem" }
+  /v1/analyses/{id}/corrections:
+    post:
+      summary: Label correction. No photo bytes.
+      operationId: createCorrection
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userCorrectedMineral]
+              properties:
+                userCorrectedMineral: { type: string }
+                form: { type: string }
+                verificationBasis: { type: string }
+                userNotes: { type: string }
+      responses:
+        "201":
+          description: Stored
+components:
+  schemas:
+    Session:
+      type: object
+      required: [token, scansRemaining, recordsRemaining]
+      properties:
+        token: { type: string }
+        scansRemaining: { type: integer, example: 5 }
+        recordsRemaining: { type: integer, example: 20 }
+    Mineral:
+      type: object
+      required: [name, category, family, chemicalFormula, mohsHardness, summary, topLookalikes]
+      properties:
+        name: { type: string }
+        alternativeNames:
+          type: array
+          items: { type: string }
+        category:
+          type: string
+          enum: ["Quartz Family", "Everyday Finds", "Collector Staples", "Shop Regulars", "Color & Flash"]
+        family: { type: string }
+        chemicalFormula: { type: string }
+        crystalSystem: { type: string }
+        mohsHardness: { type: string }
+        minHardness: { type: number }
+        maxHardness: { type: number }
+        specificGravity: { type: string }
+        luster: { type: string }
+        streak: { type: string }
+        cleavage: { type: string }
+        fracture: { type: string }
+        transparency: { type: string }
+        refractiveIndex: { type: string, nullable: true }
+        colorRange:
+          type: array
+          items: { type: string }
+        commonForms:
+          type: array
+          items:
+            type: string
+            enum: ["Rough", "Tumbled", "Faceted / Cut", "Cabochon", "Geode / Cluster", "Carved"]
+        topLookalikes:
+          type: array
+          items: { $ref: "#/components/schemas/Lookalike" }
+        ruleOutTests:
+          type: array
+          items: { type: string }
+        careWarnings:
+          type: array
+          items: { type: string }
+        summary: { type: string }
+        geologicalOrigin: { type: string }
+        rarityAndOccurrence: { type: string }
+        safetyAndHandling: { type: string }
+    Lookalike:
+      type: object
+      required: [mineralName, visualDifference, separatingTest]
+      properties:
+        mineralName: { type: string }
+        visualDifference: { type: string }
+        separatingTest: { type: string }
+        hardnessComparison: { type: string, nullable: true }
+        diagnosticReaction: { type: string, nullable: true }
+    Candidate:
+      type: object
+      required: [mineralName, score, confidenceBand]
+      properties:
+        mineralName: { type: string }
+        score: { type: number, maximum: 0.96 }
+        confidenceBand:
+          type: string
+          enum: [Confirmed, Likely, "Best Guesses"]
+        keyCharacteristics:
+          type: array
+          items: { type: string }
+        separatingTestSummary: { type: string, nullable: true }
+    Analysis:
+      type: object
+      required: [id, createdAt, source, topCandidate, mergedConfidence, confidenceBand, inferenceRoute, photoUploaded]
+      properties:
+        id: { type: string, format: uuid }
+        createdAt: { type: string, format: date-time }
+        source:
+          type: string
+          enum: [ios, android, web]
+        imageUrl: { type: string, nullable: true }
+        imageQualityNotice: { type: string, nullable: true }
+        topCandidate: { $ref: "#/components/schemas/Candidate" }
+        mergedConfidence: { type: number, maximum: 0.96 }
+        confidenceBand:
+          type: string
+          enum: [Confirmed, Likely, "Best Guesses"]
+        inferenceRoute:
+          type: string
+          enum: [on_device, cloud_text, cloud_vision, shortlist]
+        modelVersion: { type: string }
+        photoUploaded: { type: boolean }
+        engineSummary: { type: string }
+        stage1:
+          type: object
+          nullable: true
+          properties:
+            topMineralName: { type: string }
+            score: { type: number }
+            allProbabilities:
+              type: object
+              additionalProperties: { type: number }
+        stage2:
+          type: object
+          nullable: true
+          properties:
+            topMineralName: { type: string }
+            score: { type: number }
+            reasoning: { type: string }
+            visualCuesObserved:
+              type: array
+              items: { type: string }
+            suggestedTests:
+              type: array
+              items: { type: string }
+            lookalikeDisambiguation: { type: string, nullable: true }
+            candidates:
+              type: array
+              items: { $ref: "#/components/schemas/Candidate" }
+        candidates:
+          type: array
+          items: { $ref: "#/components/schemas/Candidate" }
+        separatingTests:
+          type: array
+          items: { type: string }
+        recordId: { type: string, format: uuid, nullable: true }
+    SpecimenRecordInput:
+      type: object
+      required: [mineralName, confidence, confidenceBand, source]
+      properties:
+        analysisId: { type: string, format: uuid }
+        mineralName: { type: string }
+        confidence: { type: number, maximum: 0.96 }
+        confidenceBand:
+          type: string
+          enum: [Confirmed, Likely, "Best Guesses"]
+        notes: { type: string }
+        weightGrams: { type: number, nullable: true }
+        originSource: { type: string, nullable: true }
+        form:
+          type: string
+          enum: ["Rough", "Tumbled", "Faceted / Cut", "Cabochon", "Geode / Cluster", "Carved"]
+        isFavorite: { type: boolean }
+        userConfirmed: { type: boolean }
+        customTags:
+          type: array
+          items: { type: string }
+        source:
+          type: string
+          enum: [ios, android, web]
+    SpecimenRecord:
+      allOf:
+        - $ref: "#/components/schemas/SpecimenRecordInput"
+        - type: object
+          required: [id, dateAdded]
+          properties:
+            id: { type: string, format: uuid }
+            dateAdded: { type: string, format: date-time }
+            imageUrl: { type: string, nullable: true }
+    GalleryItem:
+      type: object
+      required: [recordId, mineralName, dateAdded, source]
+      properties:
+        recordId: { type: string, format: uuid }
+        analysisId: { type: string, format: uuid, nullable: true }
+        mineralName: { type: string }
+        imageUrl: { type: string, nullable: true }
+        confidenceBand:
+          type: string
+          enum: [Confirmed, Likely, "Best Guesses"]
+        dateAdded: { type: string, format: date-time }
+        isFavorite: { type: boolean }
+        source:
+          type: string
+          enum: [ios, android, web]
