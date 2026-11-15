@@ -25,16 +25,19 @@ enum HybridRuntimeConfig {
     private static let thresholdKey = "cloud_escalation_threshold"
     private static let gate = Gate()
 
+    /// NSLock is not allowed directly inside an async function.
+    private static func claimPrepare() -> Bool {
+        gate.lock.lock()
+        defer { gate.lock.unlock() }
+        if gate.didPrepare { return false }
+        gate.didPrepare = true
+        return true
+    }
+
     static func load() async -> HybridRuntimeSettings {
         guard FirebaseBootstrap.isConfigured else { return .fallback }
         let remoteConfig = RemoteConfig.remoteConfig()
-        gate.lock.lock()
-        let needsPrepare = !gate.didPrepare
-        if needsPrepare {
-            gate.didPrepare = true
-        }
-        gate.lock.unlock()
-        if needsPrepare {
+        if claimPrepare() {
             let settings = RemoteConfigSettings()
             #if DEBUG
             settings.minimumFetchInterval = 0
