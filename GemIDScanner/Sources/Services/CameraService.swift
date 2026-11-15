@@ -36,7 +36,9 @@ public final class CameraService: NSObject, ObservableObject {
     @Published public var cameraPermissionGranted = false
     @Published public var errorMessage: String?
     
-    public let session = AVCaptureSession()
+    /// Started and stopped off the main actor. AVCaptureSession is not Sendable;
+    /// those two calls are safe from a background queue.
+    nonisolated(unsafe) public let session = AVCaptureSession()
     private var photoOutput = AVCapturePhotoOutput()
     private var videoDeviceInput: AVCaptureDeviceInput?
     private var activeDevice: AVCaptureDevice?
