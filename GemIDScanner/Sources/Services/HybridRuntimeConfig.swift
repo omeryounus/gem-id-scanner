@@ -16,14 +16,25 @@ struct HybridRuntimeSettings: Sendable {
 }
 
 enum HybridRuntimeConfig {
+    private final class Gate: @unchecked Sendable {
+        let lock = NSLock()
+        var didPrepare = false
+    }
+
     private static let modelKey = "gemini_model_name"
     private static let thresholdKey = "cloud_escalation_threshold"
-    private static var didPrepare = false
+    private static let gate = Gate()
 
     static func load() async -> HybridRuntimeSettings {
         guard FirebaseBootstrap.isConfigured else { return .fallback }
         let remoteConfig = RemoteConfig.remoteConfig()
-        if !didPrepare {
+        gate.lock.lock()
+        let needsPrepare = !gate.didPrepare
+        if needsPrepare {
+            gate.didPrepare = true
+        }
+        gate.lock.unlock()
+        if needsPrepare {
             let settings = RemoteConfigSettings()
             #if DEBUG
             settings.minimumFetchInterval = 0
@@ -35,7 +46,6 @@ enum HybridRuntimeConfig {
                 modelKey: HybridRuntimeSettings.fallback.geminiModelName as NSString,
                 thresholdKey: HybridRuntimeSettings.fallback.escalationThreshold as NSNumber
             ])
-            didPrepare = true
         }
 
         _ = try? await remoteConfig.fetchAndActivate()

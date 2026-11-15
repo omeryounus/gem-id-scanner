@@ -8,15 +8,38 @@ import FirebaseAppCheck
 /// debug provider, which the hackathon accepts. Release builds use App Attest,
 /// with DeviceCheck on hardware that cannot attest.
 enum FirebaseBootstrap {
-    private(set) static var isConfigured = false
-    private(set) static var statusMessage = "Firebase has not been configured."
+    private final class State: @unchecked Sendable {
+        let lock = NSLock()
+        var isConfigured = false
+        var statusMessage = "Firebase has not been configured."
+    }
+
+    private static let state = State()
+
+    static var isConfigured: Bool {
+        state.lock.lock()
+        defer { state.lock.unlock() }
+        return state.isConfigured
+    }
+
+    static var statusMessage: String {
+        state.lock.lock()
+        defer { state.lock.unlock() }
+        return state.statusMessage
+    }
 
     static func configure() {
-        guard !isConfigured else { return }
-        guard let plist = bundledOptions() else {
-            statusMessage = "Add GoogleService-Info.plist to GemIDScanner/Resources. See README."
+        state.lock.lock()
+        if state.isConfigured {
+            state.lock.unlock()
             return
         }
+        guard let plist = bundledOptions() else {
+            state.statusMessage = "Add GoogleService-Info.plist to GemIDScanner/Resources. See README."
+            state.lock.unlock()
+            return
+        }
+        state.lock.unlock()
 
         #if DEBUG
         AppCheck.setAppCheckProviderFactory(AppCheckDebugProviderFactory())
@@ -25,8 +48,10 @@ enum FirebaseBootstrap {
         #endif
 
         FirebaseApp.configure(options: plist)
-        isConfigured = true
-        statusMessage = "Firebase AI Logic is configured."
+        state.lock.lock()
+        state.isConfigured = true
+        state.statusMessage = "Firebase AI Logic is configured."
+        state.lock.unlock()
     }
 
     private static func bundledOptions() -> FirebaseOptions? {
