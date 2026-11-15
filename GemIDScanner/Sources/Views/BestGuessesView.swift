@@ -51,6 +51,14 @@ public struct BestGuessesView: View {
                         .foregroundColor(.white.opacity(0.75))
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 16)
+
+                    if let summary = result.stage2Prediction?.engineSummary {
+                        Text(summary)
+                            .font(.system(size: 11))
+                            .foregroundColor(.white.opacity(0.55))
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 20)
+                    }
                 }
                 .padding(.top, 12)
                 

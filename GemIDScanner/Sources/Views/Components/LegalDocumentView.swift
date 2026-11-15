@@ -55,16 +55,16 @@ public enum LegalDocumentContent {
 
     public static let privacy = """
     GEM ID SCANNER — PRIVACY POLICY
-    Last Updated: October 2026
+    Last Updated: November 2026
 
     1. ON-DEVICE PROCESSING FIRST
     Specimen color analysis and collection storage run entirely on-device using local storage.
 
-    2. ON-DEVICE APPLE INTELLIGENCE
-    Specimen photos are analyzed on this device with Apple Intelligence. Images are not uploaded to a cloud identification API.
+    2. HYBRID IDENTIFICATION
+    When Apple Intelligence can rank the specimen, Firebase AI Logic runs that model on this iPhone and the photo stays on the device. The photo is sent to Gemini through Firebase AI Logic only when the on-device model is unavailable or its confidence is below the escalation threshold.
 
     3. BETA MODEL IMPROVEMENT OPT-IN
-    Contributing specimen corrections to model improvement is entirely optional and defaults to OFF. Images and diagnostic feedback are only shared when explicitly opted in by the user.
+    Contributing corrections is optional and defaults to OFF. When it is on, the app signs in anonymously and uploads labels only: the predicted names, your correction, and a prompt hash. Specimen photos are not included.
 
     4. DATA DELETION
     You can clear cached data or delete your local collection at any time in App Settings.

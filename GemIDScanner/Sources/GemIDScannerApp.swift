@@ -5,6 +5,7 @@ import SwiftData
 ///
 /// Configures:
 /// - SwiftData persistent container for `SpecimenRecord` collection models.
+/// - Firebase AI Logic, App Check, and Remote Config before any scan.
 /// - Global singleton services for StoreKit 2 subscriptions, daily scan limits,
 ///   two-stage identification coordinator, and offline correction feedback.
 /// - Dark gemological theme and scene phase refresh triggers.
@@ -20,6 +21,7 @@ public struct GemIDScannerApp: App {
     let modelContainer: ModelContainer
     
     public init() {
+        FirebaseBootstrap.configure()
         ScanAllowanceManager.shared.resetAllowances()
         let schema = Schema([SpecimenRecord.self])
         do {

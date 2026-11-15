@@ -191,7 +191,7 @@ public struct SettingsView: View {
                                 Text("Contribute to AI Improvement")
                                     .font(.system(size: 14, weight: .medium))
                                     .foregroundColor(.white)
-                                Text("Shares verified ground-truth labels and optical features to refine multimodal vision accuracy.")
+                                Text("Uploads your corrected mineral name and the scan labels. Specimen photos stay on this iPhone.")
                                     .font(.system(size: 11))
                                     .foregroundColor(.white.opacity(0.6))
                             }
@@ -200,7 +200,7 @@ public struct SettingsView: View {
                     } header: {
                         Text("Beta Corrections & Training Pipeline")
                     } footer: {
-                        Text("Dataset export includes structured JSON metadata with pred_1..pred_3 probabilities, prompt SHA-256 (\(String(AppleVisionService.promptSHA256.prefix(8)))), verification basis, and full-resolution specimen JPEG images.")
+                        Text("A local dataset export still includes full-resolution JPEGs. Cloud sync uploads labels only: predictions, your correction, and prompt SHA-256 \(String(AppleVisionService.promptSHA256.prefix(8))).")
                             .font(.system(size: 11))
                             .foregroundColor(.white.opacity(0.4))
                     }
@@ -222,7 +222,7 @@ public struct SettingsView: View {
                     }
                     .listRowBackground(Color.white.opacity(0.04))
                     
-                    Section("On-Device Identification") {
+                    Section("Hybrid Identification") {
                         HStack(alignment: .top, spacing: 8) {
                             Image(systemName: AppleVisionService.shared.isVisionAvailable ? "checkmark.seal.fill" : "exclamationmark.triangle.fill")
                                 .foregroundColor(AppleVisionService.shared.isVisionAvailable ? .emeraldGreen : .amberGold)
@@ -230,7 +230,7 @@ public struct SettingsView: View {
                                 .font(.system(size: 13, weight: .medium))
                                 .foregroundColor(.white.opacity(0.85))
                         }
-                        Text("Identification uses Apple Intelligence on this device. Specimen photos are not sent to a cloud API.")
+                        Text("A confident on-device rank keeps the photo on this iPhone. If Apple Intelligence is unavailable, or the rank is below the escalation threshold, the photo is sent to Gemini through Firebase AI Logic.")
                             .font(.system(size: 11))
                             .foregroundColor(.white.opacity(0.6))
                     }

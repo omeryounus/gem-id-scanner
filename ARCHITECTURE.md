@@ -1,6 +1,6 @@
 # System Architecture & Technical Specifications 🏛️
 
-**Gem ID Scanner** is engineered with a modular, reactive architecture utilizing SwiftUI, SwiftData, CoreML, and Gemini Vision 2.5 Flash. This document details the subsystem design, data contracts, confidence scoring heuristics, persistence models, and monetization engine.
+**Gem ID Scanner** is a SwiftUI and SwiftData iOS app. Stage 1 is an on-device color shortlist. Stage 2 calls Firebase AI Logic at runtime: Apple's Foundation Model when the device can run it, and Gemini when it cannot or when the on-device rank is too uncertain. This document matches the code. The catalog holds about 60 species.
 
 ---
 
@@ -24,12 +24,12 @@ The application follows an **MVVM + Coordinator** architectural pattern with uni
 ┌──────────────────────────────────────┐  ┌──────────────────────────────┐
 │       Dual-Engine Inference          │  │       Persistence Layer      │
 │  ┌────────────────────────────────┐  │  │  ┌────────────────────────┐  │
-│  │ Stage 1: On-Device CoreML      │  │  │  │ SwiftData ModelContext │  │
-│  │ (Vision Neural Classifier)     │  │  │  │ (SpecimenRecord)       │  │
+│  │ Stage 1: color histogram       │  │  │  │ SwiftData ModelContext │  │
+│  │ shortlist (not a language model)│  │  │  │ (SpecimenRecord)       │  │
 │  └────────────────────────────────┘  │  │  └────────────────────────┘  │
 │  ┌────────────────────────────────┐  │  │  ┌────────────────────────┐  │
-│  │ Stage 2: Gemini Vision 2.5     │  │  │  │ CorrectionFeedbackQueue│  │
-│  │ (Multimodal Cloud Reasoner)    │  │  │  │ (UserDefaults / JSON)  │  │
+│  │ Stage 2: Firebase AI Logic     │  │  │  │ Correction queue       │  │
+│  │ on-device text, Gemini image   │  │  │  │ labels → Firestore     │  │
 │  └────────────────────────────────┘  │  │  └────────────────────────┘  │
 └──────────────────────────────────────┘  └──────────────────────────────┘
 ```
@@ -38,35 +38,39 @@ The application follows an **MVVM + Coordinator** architectural pattern with uni
 
 ## 2. Two-Stage Hybrid Identification Pipeline
 
-Mineralogy visual identification presents unique challenges due to pseudomorphism, variable crystal habits, solid solution series, and chromatic impurities. The identification pipeline mitigates single-model hallucinations by combining on-device computer vision with cloud multimodal intelligence.
+The two stages run in sequence. Stage 1 never calls a language model. Stage 2 always goes through Firebase AI Logic when a real `GoogleService-Info.plist` is in the app bundle. Without that file the app keeps the color shortlist and says why.
 
-### Pipeline Flow
+Firebase AI Logic's on-device hybrid path accepts text only. Sending the photo into the hybrid session would force a cloud fallback, so a capable iPhone ranks a measured color sentence and the JPEG stays on the device. The photo is uploaded only when Apple Intelligence is unavailable, the hybrid session itself fell back to cloud text, or the on-device score is below `cloud_escalation_threshold` (default 0.55, Remote Config).
 
 ```
 [Captured Frame / Photo]
           │
           ▼
-[Camera Quality Gate] ───(Blur / Low Light / Glare)───► [HUD Quality Warnings]
-          │ (Passes Quality Threshold)
-          ├──────────────────────────────────────────────────┐
-          ▼                                                  ▼
-[Stage 1: CoreML On-Device]                     [Stage 2: Gemini Vision 2.5]
-- Neural Engine Vision inference                 - Multimodal crystal habit analysis
-- Low latency (<100ms)                          - Contextual color zoning & luster
-- Top-5 candidate probabilities                 - Top-3 candidate probabilities
-          │                                                  │
-          └────────────────────────┬─────────────────────────┘
-                                   ▼
-                   [Identification Coordinator Merge]
-                                   │
-                   ┌───────────────┴───────────────┐
-                   ▼                               ▼
-       [High Agreement (≥85%)]        [Ambiguity / Low Conf (<85%)]
-                   │                               │
-                   ▼                               ▼
-          [ResultView.swift]             [BestGuessesView.swift]
-      (Direct Specimen Diagnosis)      (Separating Tests & Lookalikes)
+[Camera Quality Gate]
+          │
+          ▼
+[Stage 1: on-device color histogram shortlist]
+          │
+          ▼
+[Firebase AI Logic hybrid session — text brief only]
+          │
+          ├── modelVersion is the Apple on-device model
+          │   AND score >= threshold
+          │        → keep the local rank, photo stays on device
+          │
+          └── otherwise
+                   ▼
+        [Firebase AI Logic cloud Gemini, JPEG attached]
+                   │
+                   ▼
+        [IdentificationCoordinator merge, cap 96%]
+                   │
+          ┌────────┴────────┐
+          ▼                 ▼
+   [ResultView]     [BestGuessesView]
 ```
+
+The cloud model name defaults to `gemini-3.5-flash-lite`. Change `gemini_model_name` in Remote Config to move it, including to `gemini-4-hydrogen`, without a new build. App Check is installed before `FirebaseApp.configure()`. Debug builds use the App Check debug provider. Release builds use App Attest, or DeviceCheck when App Attest is unavailable.
 
 ---
 
@@ -82,14 +86,14 @@ Non-destructive optical imaging cannot determine internal chemical bonding or is
 
 ### Merge Heuristic Algorithm
 
-Let $C_1$ and $M_1$ be the top confidence score and mineral name from Stage 1 (CoreML), and $C_2$ and $M_2$ be the score and mineral name from Stage 2 (Gemini Vision):
+Let $C_1$ and $M_1$ be the Stage 1 color-shortlist score and name, and $C_2$ and $M_2$ the Stage 2 score and name. An on-device text rank is capped at 0.70 before the merge, because that model never saw the photo. Cloud vision is capped at 0.96.
 
-1. **Species Consensus ($M_1 == M_2$)**:
-   $$\text{RawScore} = 0.40 \cdot C_1 + 0.60 \cdot C_2 + 0.08$$
-   $$\text{MergedConfidence} = \min(\text{RawScore}, 0.96)$$
-2. **Species Divergence ($M_1 \ne M_2$)**:
-   $$\text{MergedConfidence} = \min(\max(C_1, C_2) \cdot 0.72, 0.82)$$
-   The coordinator flags visual ambiguity, and promotes diagnostic separating tests from `MineralDatabase.lookalikes`.
+1. **Same species ($M_1$ equals $M_2$, case-insensitive)**:
+   merged = min(0.35 * C1 + 0.65 * C2, 0.96). The primary name is the Stage 1 name.
+2. **Different species**:
+   merged = min(min(C1, C2), 0.78). The primary name is whichever stage scored higher.
+
+Confirmed (85–96%) should come from agreement with a cloud-vision rank, or from a merge that clears that band. A color-brief rank alone is not treated as confirmed.
 
 ---
 
@@ -130,8 +134,8 @@ When a user selects *"None of these match"* or overrides a prediction:
    - Field observations & Diagnostic Notes
    - Timestamp & UUID
 2. The item is saved to local device storage (`UserDefaults` JSON array) for offline resilience.
-3. In [`SettingsView.swift`](GemIDScanner/Sources/Views/SettingsView.swift) or [`CorrectionQueueView.swift`](GemIDScanner/Sources/Views/CorrectionQueueView.swift), pending corrections can be synced asynchronously to retrain and fine-tune classifier weights.
-4. Privacy is preserved via user opt-in (`modelImprovementOptIn` toggle).
+3. From [`CorrectionQueueView.swift`](GemIDScanner/Sources/Views/CorrectionQueueView.swift) the user can sync the queue. If Firebase is configured and **Contribute to AI Improvement** is on, `CorrectionCloudSync` signs in with anonymous Authentication and writes `corrections/{id}` in Firestore. The document holds labels only. Photo bytes stay on the device. Rules are in [`firebase/firestore.rules`](firebase/firestore.rules).
+4. If Firebase is not configured and a webhook URL was set, the older webhook upload still runs. A local zip export can still include the JPEGs. That file never leaves the device unless the user shares it.
 
 ---
 

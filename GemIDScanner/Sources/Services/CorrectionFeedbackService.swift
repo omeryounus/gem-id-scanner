@@ -331,8 +331,27 @@ public final class CorrectionFeedbackService: ObservableObject {
         
         var syncedCount = 0
         var failedCount = 0
-        
-        if let targetURL = endpoint {
+
+        if FirebaseBootstrap.isConfigured && modelImprovementOptIn {
+            do {
+                let uploaded = try await CorrectionCloudSync.upload(items: pending)
+                for index in queuedCorrections.indices where uploaded.contains(queuedCorrections[index].id) {
+                    queuedCorrections[index].isUploaded = true
+                    queuedCorrections[index].uploadTimestamp = Date()
+                    syncedCount += 1
+                }
+                failedCount = pending.count - syncedCount
+                if syncedCount > 0 {
+                    self.lastSyncDate = Date()
+                }
+                if failedCount > 0 {
+                    self.lastSyncError = "Firestore accepted \(syncedCount) of \(pending.count) corrections."
+                }
+            } catch {
+                failedCount = pending.count
+                self.lastSyncError = error.localizedDescription
+            }
+        } else if let targetURL = endpoint {
             // Attempt live network upload
             do {
                 var request = URLRequest(url: targetURL)
@@ -392,9 +411,6 @@ public final class CorrectionFeedbackService: ObservableObject {
             if let p3 = item.pred_3, let c3 = item.conf_3 {
                 dict["predicted_3"] = p3
                 dict["confidence_3"] = c3
-            }
-            if let photo = item.photoData ?? loadImageFromDisk(id: item.id) {
-                dict["image_base64"] = photo.base64EncodedString()
             }
             return dict
         }

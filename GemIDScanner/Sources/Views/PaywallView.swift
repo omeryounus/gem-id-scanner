@@ -103,8 +103,8 @@ public struct PaywallView: View {
                             )
                             ProFeatureRow(
                                 icon: "bolt.horizontal.fill",
-                                title: "On-Device Apple Intelligence",
-                                description: "Identifies stones on this iPhone with Apple Intelligence. Photos stay on the device."
+                                title: "Hybrid Identification",
+                                description: "Apple Intelligence ranks the stone on this iPhone. Uncertain photos go to Gemini through Firebase AI Logic."
                             )
                         }
                         .padding(.horizontal, 16)

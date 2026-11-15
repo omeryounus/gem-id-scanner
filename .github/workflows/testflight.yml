@@ -19,22 +19,24 @@ env:
 jobs:
   build_and_deploy:
     name: Build & Upload to TestFlight
-    runs-on: macos-14
+    runs-on: macos-26
     timeout-minutes: 60
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Select Xcode
+      - name: Select Xcode 26.6
         run: |
-          ls -d /Applications/Xcode* || true
-          if [ -d "/Applications/Xcode_16.app" ]; then
-            sudo xcode-select -s /Applications/Xcode_16.app
-          elif [ -d "/Applications/Xcode_15.4.app" ]; then
-            sudo xcode-select -s /Applications/Xcode_15.4.app
+          set -euo pipefail
+          if [ -d "/Applications/Xcode_26.6.app" ]; then
+            sudo xcode-select -s /Applications/Xcode_26.6.app
           elif [ -d "/Applications/Xcode.app" ]; then
             sudo xcode-select -s /Applications/Xcode.app
+          else
+            echo "::error::Xcode 26.6 is not installed on this runner"
+            ls -d /Applications/Xcode*.app || true
+            exit 1
           fi
           xcodebuild -version
           xcrun --sdk iphoneos --show-sdk-version

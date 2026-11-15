@@ -4,7 +4,8 @@ import SwiftUI
 
 /// Orchestrates the two-stage visual identification pipeline:
 /// - Stage 1: Fast on-device color-based shortlist
-/// - Stage 2: On-device Apple Foundation Models vision, constrained to the catalog
+/// - Stage 2: Firebase AI Logic. On-device Apple Intelligence when it can rank
+///   the color brief, otherwise Gemini. The photo is uploaded only for cloud vision.
 ///
 /// Merge Rules:
 /// - Agreement: When Stage 1 and Stage 2 predict the same mineral, the confidence score is
@@ -35,7 +36,7 @@ public final class IdentificationCoordinator: ObservableObject {
             case .idle: return "Ready"
             case .assessingQuality: return "Evaluating image lighting & sharpness..."
             case .runningStage1OnDevice: return "Building an on-device color shortlist..."
-            case .runningStage2OnDevice: return "Consulting on-device Apple Intelligence..."
+            case .runningStage2OnDevice: return "Asking Firebase AI Logic. On-device first, Gemini if needed..."
             case .mergingConfidence: return "Merging two-stage predictions & calculating confidence..."
             case .complete: return "Identification Complete"
             }
@@ -69,7 +70,7 @@ public final class IdentificationCoordinator: ObservableObject {
         analysisStep = .runningStage1OnDevice
         let stage1 = try await coreMLService.classify(image: image)
         
-        // 3. Stage 2 On-Device Apple Intelligence
+        // 3. Stage 2 Firebase AI Logic (on-device text, then cloud vision if needed)
         analysisStep = .runningStage2OnDevice
         let stage2: Stage2Inference
         do {
@@ -78,8 +79,8 @@ public final class IdentificationCoordinator: ObservableObject {
                     try await self.appleVisionService.analyzeSecondOpinion(image: image, stage1: stage1)
                 }
                 group.addTask {
-                    try await Task.sleep(nanoseconds: 20_000_000_000)
-                    throw NSError(domain: "IdentificationCoordinator", code: 408, userInfo: [NSLocalizedDescriptionKey: "On-device vision timed out after 20 seconds."])
+                    try await Task.sleep(nanoseconds: 45_000_000_000)
+                    throw NSError(domain: "IdentificationCoordinator", code: 408, userInfo: [NSLocalizedDescriptionKey: "Firebase AI Logic timed out after 45 seconds."])
                 }
                 guard let first = try await group.next() else {
                     throw NSError(domain: "IdentificationCoordinator", code: 500, userInfo: [NSLocalizedDescriptionKey: "No result returned from on-device vision analysis."])
@@ -90,7 +91,7 @@ public final class IdentificationCoordinator: ObservableObject {
         } catch {
             stage2 = appleVisionService.unavailableShortlist(
                 stage1: stage1,
-                explanation: "On-device Apple Intelligence was unavailable. \(error.localizedDescription)"
+                explanation: "Firebase AI Logic did not finish. \(error.localizedDescription)"
             )
         }
         

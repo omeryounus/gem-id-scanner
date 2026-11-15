@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Screen 3: Animated radar scan view displaying two-stage on-device progress steps.
+/// Screen 3: Animated radar scan view for the hybrid identification steps.
 public struct AnalyzingView: View {
     public let image: UIImage?
     public let onComplete: (IdentificationResult) -> Void
@@ -29,7 +29,7 @@ public struct AnalyzingView: View {
                         .tracking(2.0)
                         .foregroundColor(.cyan)
                     
-                    Text("On-Device Identification")
+                    Text("Hybrid Identification")
                         .font(.system(size: 22, weight: .bold, design: .rounded))
                         .foregroundColor(.white)
                 }
@@ -95,8 +95,8 @@ public struct AnalyzingView: View {
                     
                     StepRowView(
                         icon: "apple.intelligence",
-                        title: "3. Stage 2: On-Device Apple Intelligence",
-                        subtitle: "Crystal habit, luster, and lookalike analysis",
+                        title: "3. Stage 2: Firebase AI Logic",
+                        subtitle: "On-device Apple Intelligence, then Gemini if needed",
                         isCurrent: coordinator.analysisStep == .runningStage2OnDevice,
                         isDone: coordinator.analysisStep == .mergingConfidence || coordinator.analysisStep == .complete
                     )

@@ -55,6 +55,24 @@ public struct Stage2Inference: Codable, Hashable, Sendable {
     public let candidate3Score: Double?
     public let family: String?
     public let identifiedForm: String?
+    /// `on_device`, `cloud_text`, `cloud_vision`, or `shortlist`.
+    public let inferenceRoute: String
+    public let modelVersion: String
+    public let photoLeftDevice: Bool
+
+    /// One line for the result screen. Names the engine that produced this rank.
+    public var engineSummary: String {
+        switch inferenceRoute {
+        case "on_device":
+            return "Firebase AI Logic · Apple Intelligence on this iPhone. The photo stayed on the device."
+        case "cloud_vision":
+            return "Firebase AI Logic · Gemini examined the photo\(modelVersion.isEmpty ? "" : " (\(modelVersion))")."
+        case "cloud_text":
+            return "Firebase AI Logic · Gemini ranked the on-device color brief. The photo stayed on the device."
+        default:
+            return "Color shortlist only. Firebase AI Logic did not return a catalog rank."
+        }
+    }
     
     public init(
         topMineralName: String,
@@ -68,7 +86,10 @@ public struct Stage2Inference: Codable, Hashable, Sendable {
         candidate3Name: String? = nil,
         candidate3Score: Double? = nil,
         family: String? = nil,
-        identifiedForm: String? = nil
+        identifiedForm: String? = nil,
+        inferenceRoute: String = "shortlist",
+        modelVersion: String = "",
+        photoLeftDevice: Bool = false
     ) {
         self.topMineralName = topMineralName
         self.score = score
@@ -82,6 +103,9 @@ public struct Stage2Inference: Codable, Hashable, Sendable {
         self.candidate3Score = candidate3Score
         self.family = family
         self.identifiedForm = identifiedForm
+        self.inferenceRoute = inferenceRoute
+        self.modelVersion = modelVersion
+        self.photoLeftDevice = photoLeftDevice
     }
 }
 

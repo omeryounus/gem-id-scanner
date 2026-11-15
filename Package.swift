@@ -14,11 +14,20 @@ let package = Package(
             targets: ["GemIDScanner"]
         ),
     ],
-    dependencies: [],
+    dependencies: [
+        .package(url: "https://github.com/firebase/firebase-ios-sdk.git", exact: "12.19.3"),
+    ],
     targets: [
         .target(
             name: "GemIDScanner",
-            dependencies: [],
+            dependencies: [
+                .product(name: "FirebaseAILogic", package: "Firebase"),
+                .product(name: "FirebaseAppCheck", package: "Firebase"),
+                .product(name: "FirebaseRemoteConfig", package: "Firebase"),
+                .product(name: "FirebaseAuth", package: "Firebase"),
+                .product(name: "FirebaseFirestore", package: "Firebase"),
+                .product(name: "FirebaseCore", package: "Firebase"),
+            ],
             path: "GemIDScanner/Sources",
             resources: []
         ),

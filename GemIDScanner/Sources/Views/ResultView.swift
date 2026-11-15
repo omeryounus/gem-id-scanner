@@ -61,6 +61,13 @@ public struct ResultView: View {
                             .font(.system(size: 11))
                             .foregroundColor(.white.opacity(0.7))
                             .lineLimit(2)
+
+                        if let summary = result.stage2Prediction?.engineSummary {
+                            Text(summary)
+                                .font(.system(size: 11))
+                                .foregroundColor(.white.opacity(0.55))
+                                .lineLimit(3)
+                        }
                     }
                     Spacer()
                 }

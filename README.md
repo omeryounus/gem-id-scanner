@@ -1,115 +1,94 @@
-# Gem ID Scanner 💎
+# Gem ID Scanner
 
-A state-of-the-art iOS application for mineral, crystal, gemstone, and rock identification built with **SwiftUI**, **SwiftData**, **on-device Apple Intelligence**, and **StoreKit 2**.
+An iOS app that names a mineral from a photo, then tells you the physical test that separates it from the lookalike. Built for rockhounds, field collectors, and lapidary hobbyists.
 
-Designed for field geologists, rockhounds, lapidary artisans, jewelers, and nature enthusiasts, Gem ID Scanner pairs lightning-fast on-device neural classification with cloud multimodal AI verification to deliver diagnostic mineralogy guidance.
+Stage 1 is an on-device color shortlist across a catalog of about 60 species. Stage 2 calls **Firebase AI Logic** at runtime. A capable iPhone ranks a measured color brief with Apple's Foundation Model, and the photo stays on the device. If that model is unavailable, or the rank is below a Remote Config threshold, Gemini sees the photograph through the same Firebase client.
 
----
+Confidence is capped at 96%. A photo is not a hardness test, a streak test, or a lab result.
 
-## 🌟 Key Features
+The app is free to try. Five scans a day and 20 saved specimens do not require a purchase. StoreKit subscriptions raise those limits.
 
-- 📸 **Smart Camera Viewfinder & Real-Time HUD**: Dynamic focus reticle with optical quality warnings (low light, motion blur, glint reflection, macro distance).
-- 🧠 **Dual-Engine Identification Pipeline**:
-  - **Stage 1 (On-Device Color Shortlist)**: Fast catalog shortlist from specimen color.
-  - **Stage 2 (On-Device Apple Intelligence)**: Foundation Models vision evaluating crystal habit, cleavage, lustre, and lookalikes. Photos stay on the device.
-  - **Gemological Confidence Ceiling**: Realistic confidence scores capped at **96%**, honoring the scientific reality that non-destructive optical scans cannot guarantee 100% molecular certainty.
-- 🔬 **Diagnostic Separation Guides**: Multi-candidate disambiguation for visual lookalikes (e.g., *Sodalite vs. Lapis Lazuli*, *Pyrite vs. Chalcopyrite*, *Quartz vs. Topaz*) with physical tests (Mohs hardness, streak plate, UV fluorescence, acid test).
-- 🏺 **SwiftData Specimen Vault**: Organize and catalog personal finds with photos, weights, locality tags, crystal forms (rough, tumbled, faceted, geode), and custom field notes.
-- 🏷️ **Share Card & Certificate Generator**: Render high-resolution specimen identity cards with chemical formulas, crystal systems, and diagnostic metadata.
-- 🔁 **Offline Correction Queue & Active Learning**: Queue misidentification feedback offline; synchronize telemetry to continuously train and fine-tune classifier models.
-- 💳 **StoreKit 2 Native In-App Purchases**: Transparent subscription tiers (Monthly, Annual with 3-day free trial, Lifetime Pass) with daily allowance enforcement (5 free scans/day, 20 free collection items).
+## What the app already did, and what changed for #BuildHybridAI
 
----
+The camera, catalog, collection, correction queue, and StoreKit paywall already existed. Stage 2 used to call Apple's Foundation Models API directly.
 
-## 📱 Screen-by-Screen Architecture
+For the Firebase Hybrid AI hackathon, Stage 2 was rebuilt on Firebase AI Logic:
 
-| Screen | View | Description |
-| :--- | :--- | :--- |
-| **1. Camera Scanner** | [`CameraHomeView.swift`](GemIDScanner/Sources/Views/CameraHomeView.swift) | Full-screen AVFoundation camera, centering reticle, quality tips banner, torch toggle, scan allowance meter, and photo library picker. |
-| **2. Capture Tips** | [`CaptureTipsBanner.swift`](GemIDScanner/Sources/Views/CaptureTipsBanner.swift) | Best practices guide for lighting, backgrounds, multi-angle scanning, and specimen cleaning. |
-| **3. Analyzing Pulse** | [`AnalyzingView.swift`](GemIDScanner/Sources/Views/AnalyzingView.swift) | Dual-engine progress visualizer showing stage progression and neural network confidence evaluation. |
-| **4. Result (High Confidence)** | [`ResultView.swift`](GemIDScanner/Sources/Views/ResultView.swift) | Confirmed (85–96%) and Likely (55–84%) identification result card with Mohs specs, chemical formula, specimen save dialog, and share card export. |
-| **5. Disambiguation (Low Confidence)** | [`BestGuessesView.swift`](GemIDScanner/Sources/Views/BestGuessesView.swift) | Multi-candidate selector for ambiguous specimens (<55%) featuring physical separation tests, "Rule this in" guidance, and user correction triggers. |
-| **6. Mineral Encyclopedia** | [`MineralDetailView.swift`](GemIDScanner/Sources/Views/MineralDetailView.swift) | Complete gemological reference page containing crystal system, cleavage, fracture, refractive index, specific gravity, UV reaction, and lookalike comparison matrix. |
-| **7. Specimen Collection Vault** | [`CollectionView.swift`](GemIDScanner/Sources/Views/CollectionView.swift) | SwiftData-backed grid of saved rock specimens with search, filtering (Rough, Tumbled, Faceted, Geodes), favorite toggles, and detail inspector. |
-| **8. Pro Paywall** | [`PaywallView.swift`](GemIDScanner/Sources/Views/PaywallView.swift) | Subscription store with Monthly ($4.99/mo), Annual ($29.99/yr + 3-day trial), and Lifetime ($69.99 once) options, transparent billing disclosures, and purchase restoration. |
-| **9. Settings & Correction Queue** | [`SettingsView.swift`](GemIDScanner/Sources/Views/SettingsView.swift) & [`CorrectionQueueView.swift`](GemIDScanner/Sources/Views/CorrectionQueueView.swift) | Daily scan reset countdown, AI improvement opt-in toggle, local cache management, JSON collection export, and offline correction queue inspector. |
+- A hybrid session uses the on-device system model first and Gemini second.
+- The on-device call is text only, because the hybrid on-device path does not accept images. The JPEG is uploaded only on the cloud-vision path.
+- App Check is installed before Firebase starts. Debug builds use the App Check debug provider. Release builds use App Attest, or DeviceCheck when App Attest is unavailable.
+- Remote Config sets `gemini_model_name` (default `gemini-3.5-flash-lite`) and `cloud_escalation_threshold` (default `0.55`).
+- Opt-in corrections sign in with anonymous Authentication and write labels to Firestore. Photo bytes are not in that document.
 
----
+The Firebase iOS SDK is pinned to **12.19.3**. That is the last 12.x release that still ships `hybridModel(primary:secondary:)`, which is the hybrid API in the hackathon docs. Firebase 13 removed that API.
 
-## 🏗️ Project Structure
+## How a scan runs
+
+1. The camera checks lighting, focus, and glare.
+2. Stage 1 builds a color shortlist on the device. This step is not a language model.
+3. If `GoogleService-Info.plist` is missing or still has placeholder values, the app shows that shortlist and explains that Firebase is not configured.
+4. Otherwise Firebase AI Logic opens a hybrid session. The prompt tells the on-device model that no photograph is attached.
+5. The response `modelVersion` is the route. An Apple on-device version at or above the escalation threshold is kept, and the photo never leaves the phone. On-device text confidence is capped at 70%.
+6. Any other outcome sends the JPEG to Gemini through Firebase AI Logic and asks for one JSON object constrained to the catalog.
+7. The coordinator merges the two stages. Agreement is `0.35 * stage1 + 0.65 * stage2`, capped at 0.96. Disagreement uses the lower score, capped at 0.78.
+
+The result screen and the best-guesses screen both name the route that answered.
+
+## Project layout
+
+The app target is generated from [`project.yml`](project.yml) with XcodeGen. [`Package.swift`](Package.swift) builds the same sources as a library. Open the generated Xcode project to run the app.
 
 ```
-gem-id-scanner/
-├── Package.swift                             # Swift Package Manager Manifest
-├── README.md                                 # Overview & Documentation
-├── ARCHITECTURE.md                           # System Design & Data Pipelines
-└── GemIDScanner/
-    └── Sources/
-        ├── GemIDScannerApp.swift             # @main SwiftUI App Entry Point & SwiftData Setup
-        ├── Models/
-        │   ├── ConfidenceBand.swift          # Confirmed, Likely, Best Guesses bands
-        │   ├── IdentificationResult.swift    # Dual-engine candidate rankings & merge scores
-        │   ├── Lookalike.swift               # Visual lookalike diagnostic separation model
-        │   ├── Mineral.swift                 # Comprehensive gemological schema
-        │   └── SpecimenRecord.swift          # SwiftData persistent specimen model
-        ├── Database/
-        │   └── MineralDatabase.swift         # Built-in offline encyclopedia of 500+ species
-        ├── Services/
-        │   ├── CameraService.swift           # AVFoundation session & image quality analyzer
-        │   ├── CoreMLClassifierService.swift # On-device Stage 1 color shortlist
-        │   ├── CorrectionFeedbackService.swift# Offline correction queue & training telemetry
-        │   ├── AppleVisionService.swift      # On-device Foundation Models Stage 2 vision
-        │   ├── IdentificationCoordinator.swift# Two-stage orchestration & merge logic
-        │   ├── ScanAllowanceManager.swift    # Free tier scan & collection limiter
-        │   ├── ShareCardGenerator.swift      # UIGraphics-rendered specimen certificates
-        │   └── StoreKitService.swift         # StoreKit 2 subscription & transaction manager
-        └── Views/
-            ├── MainTabView.swift             # Root Tab Navigation (Scanner, Vault, Settings)
-            ├── CameraHomeView.swift          # Live camera viewfinder & scan HUD
-            ├── CaptureTipsBanner.swift       # Optical capture best-practice banner
-            ├── AnalyzingView.swift           # Dual-engine progress visualizer
-            ├── ResultView.swift              # Confirmed identification screen
-            ├── BestGuessesView.swift         # Multi-candidate disambiguation screen
-            ├── MineralDetailView.swift       # Full mineralogy encyclopedia sheet
-            ├── CollectionView.swift          # SwiftData specimen collection vault
-            ├── PaywallView.swift             # Pro subscription & StoreKit 2 paywall
-            ├── SettingsView.swift            # Preferences, reset countdown & data export
-            ├── CorrectionQueueView.swift     # Offline correction queue management
-            └── Components/
-                ├── ConfidenceRingView.swift  # Circular score indicator
-                ├── LookalikeCardView.swift   # Visual lookalike comparison card
-                ├── ReticleOverlayView.swift  # Viewfinder laser-grid reticle
-                └── SeparatingTestCardView.swift # Mohs/Streak/UV separation test card
+GemIDScanner/Sources/Services/FirebaseBootstrap.swift        App Check, then Firebase
+GemIDScanner/Sources/Services/HybridRuntimeConfig.swift      Remote Config
+GemIDScanner/Sources/Services/HybridIdentificationService.swift  hybrid session + cloud image call
+GemIDScanner/Sources/Services/AppleVisionService.swift       Stage 2 policy
+GemIDScanner/Sources/Services/IdentificationCoordinator.swift  sequence and merge
+GemIDScanner/Sources/Services/CorrectionCloudSync.swift      opt-in Firestore labels
+firebase/firestore.rules
+GoogleService-Info.example.plist
+SUBMISSION.md                                                Devpost paste sheet
 ```
 
----
+## Requirements
 
-## 🛠️ Requirements & Setup
+- Mac with Xcode 26 and the iOS 26.4 SDK
+- An iPhone that can run the app (Apple Intelligence is required for the on-device route)
+- [XcodeGen](https://github.com/yonaskolb/XcodeGen)
+- A Firebase project, for the Gemini path
 
-- **iOS Target**: iOS 26.4+ / iPadOS 26.4+ (Apple Intelligence required for on-device vision)
-- **macOS Target** (Optional Catalyst/Designed for iPad): macOS 14.0+
-- **Xcode Version**: Xcode 15.0+ or Xcode 16+
-- **Swift Version**: Swift 5.9 / Swift 6.0
-- **Frameworks**: SwiftUI, SwiftData, AVFoundation, StoreKit 2, Foundation Models, Vision, PhotosUI
+This repository does not include a Firebase project file. Without one, scans still return the on-device color shortlist.
 
-### Opening in Xcode
+## Run it
 
-1. Open Xcode and select **File > Open...**
-2. Choose the `Package.swift` file or the `gem-id-scanner` root directory.
-3. Select your target device / iOS 17+ Simulator and press **⌘R** to run.
+```bash
+brew install xcodegen
+# Copy GoogleService-Info.example.plist to GemIDScanner/Resources/GoogleService-Info.plist
+# and replace every REPLACE_ value with the iOS app from your Firebase project.
+# The real plist is gitignored.
+xcodegen generate
+open GemIDScanner.xcodeproj
+```
 
----
+In the Firebase console:
 
-## 🔐 Privacy & Offline Reliability
+1. Create a project and add an iOS app with bundle id `com.gemidscanner.app`.
+2. Enable the Gemini Developer API for Firebase AI Logic.
+3. Turn on App Check. Enforce it for Firebase AI Logic. For a debug install, register the debug token that the debug provider prints on first launch. Do not commit that token.
+4. Enable Anonymous Authentication.
+5. Publish Remote Config parameters `gemini_model_name` = `gemini-3.5-flash-lite` and `cloud_escalation_threshold` = `0.55`.
+6. Deploy the rules: `firebase deploy --only firestore:rules` from this directory, or paste [`firebase/firestore.rules`](firebase/firestore.rules) into the console.
 
-- **On-Device First**: Color shortlist and Apple Intelligence vision both run on the device.
-- **On-Device Vision**: Identification runs with Apple Intelligence on the device. Specimen photos are not uploaded to a cloud identification API.
-- **Offline Vault**: Personal specimen collections, custom notes, and favorite tags are saved locally in the device's private SwiftData storage container.
-- **Opt-in Telemetry**: User-submitted corrections are stored in an offline queue and only uploaded if the user explicitly enables "Contribute to AI Improvement".
+Debug builds set the Remote Config minimum fetch interval to 0 so a console change shows up on the next scan. Release builds wait 12 hours.
 
----
+## Continuous integration
 
-## 📄 License
+Pull requests and pushes to `main` compile an unsigned simulator build on a GitHub `macos-26` runner with Xcode 26.6. See [`.github/workflows/ios-build.yml`](.github/workflows/ios-build.yml). That job checks that the app compiles. It does not sign an IPA or run the camera. Tagged releases still use [`.github/workflows/testflight.yml`](.github/workflows/testflight.yml), which now uses the same runner and Xcode.
 
-Copyright © 2026 Gem ID Scanner. All rights reserved.
+## Privacy
+
+A confident on-device rank keeps the photograph on the iPhone. The photograph is sent to Gemini through Firebase AI Logic only when the on-device model is unavailable or its score is below the escalation threshold. Correction sync is off unless the user turns on Contribute to AI Improvement, and that upload contains labels only. The in-app privacy policy says the same thing.
+
+## License
+
+Apache License 2.0. See [LICENSE](LICENSE). Copyright 2026 Gem ID Scanner contributors.
