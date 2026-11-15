@@ -1,4 +1,5 @@
 import Foundation
+import DeviceCheck
 import FirebaseCore
 import FirebaseAppCheck
 
@@ -91,8 +92,8 @@ enum FirebaseBootstrap {
 /// Production App Check provider. Debug builds do not use this factory.
 final class GemAppCheckProviderFactory: NSObject, AppCheckProviderFactory {
     func createProvider(with app: FirebaseApp) -> (any AppCheckProvider)? {
-        if #available(iOS 14.0, *), AppAttestProvider.isSupported {
-            return AppAttestProvider(app: app)
+        if DCAppAttestService.shared.isSupported, let provider = AppAttestProvider(app: app) {
+            return provider
         }
         return DeviceCheckProvider(app: app)
     }
