@@ -1,5 +1,7 @@
 import Foundation
-import AVFoundation
+// AVCaptureSession is not Sendable. startRunning and stopRunning block, so they
+// stay on a detached task. This import turns that known mismatch into a warning.
+@preconcurrency import AVFoundation
 import SwiftUI
 import Combine
 
