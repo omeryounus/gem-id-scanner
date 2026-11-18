@@ -114,5 +114,5 @@ StoreKit 2 in-app purchases are enabled for Pro access. All subscription options
 3. OFFLINE CAPABILITY:
 Stage 1 optical classification runs completely on-device without network connectivity. Stage 2 cloud verification activates when online to perform deep optical cross-referencing.
 
-Contact: Omer Younus ($APP_REVIEW_EMAIL)
+Contact: Omer Younus ($APP_REVIEW_EMAIL — set in App Store Connect review information)
 ```

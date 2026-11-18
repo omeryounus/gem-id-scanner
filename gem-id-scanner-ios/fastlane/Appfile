@@ -1,4 +1,5 @@
 # Fastlane Appfile for Gem ID Scanner
 app_identifier(ENV.fetch("APP_IDENTIFIER", "com.gemidscanner.app"))
-apple_id(ENV.fetch("APPLE_ID", "$APP_REVIEW_EMAIL"))
+# Apple ID comes from the environment (APPLE_ID). The ASC API key covers uploads without it.
+apple_id(ENV["APPLE_ID"]) if ENV["APPLE_ID"]
 team_id(ENV.fetch("APPLE_TEAM_ID", "Z2RB57KVQ5"))
