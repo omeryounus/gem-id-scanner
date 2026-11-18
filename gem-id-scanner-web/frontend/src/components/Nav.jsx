@@ -14,9 +14,7 @@ export const NAV = [
 export const SideRail = () => (
   <aside className="sticky top-0 hidden h-dvh w-[232px] shrink-0 flex-col border-r border-border bg-sidebar px-3 py-5 md:flex">
     <NavLink to="/identify" viewTransition className="mb-8 flex items-center gap-2.5 px-2" data-testid="brand-home-link">
-      <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary text-primary-foreground shadow-[0_0_24px_rgba(245,158,11,0.35)]">
-        <Gem className="h-4 w-4" strokeWidth={2.4} />
-      </span>
+      <img src="/favicon.png" alt="" aria-hidden="true" className="h-8 w-8 rounded-lg shadow-[0_0_24px_rgba(240,192,64,0.25)]" />
       <span className="font-display text-lg font-semibold tracking-tight">Field Bench</span>
     </NavLink>
     <nav className="flex flex-col gap-0.5" aria-label="Primary">

@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Camera, ImageUp, ClipboardPaste, Loader2, ArrowUpRight, CloudOff } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Eyebrow, PageHeader, Panel, Pips } from "@/components/Bits";
+import { Eyebrow, Panel, Pips } from "@/components/Bits";
 import { useAnalyses, useIdentify, useUsage } from "@/lib/queries";
 import { prepareImage } from "@/lib/image";
 import { errMsg, fileUrl } from "@/lib/api";
@@ -160,14 +160,30 @@ export default function IdentifyPage() {
 
   return (
     <div className="rise">
-      <PageHeader eyebrow="Station 01 · Identify" title="What's on the bench?" testid="identify-header">
-        {u && (
-          <div className="flex items-center gap-3 rounded-full border border-border bg-card px-4 py-2" data-testid="identify-quota-meter">
-            <Pips used={u.scans_today} total={u.scan_limit} />
-            <span className="font-mono text-xs tabular-nums text-muted-foreground">{u.scan_limit - u.scans_today} scans left today</span>
+      <header className="relative mb-8 overflow-hidden rounded-2xl border border-border bg-[#050a0b]" data-testid="identify-header">
+        <img
+          src="/hero-1536.webp"
+          srcSet="/hero-768.webp 768w, /hero-1536.webp 1536w"
+          sizes="(min-width: 1024px) 1100px, 100vw"
+          alt=""
+          aria-hidden="true"
+          className="block h-44 w-full object-cover object-[20%_55%] sm:absolute sm:inset-0 sm:h-full sm:object-left"
+        />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-44 bg-gradient-to-t from-[#050a0b] via-transparent to-transparent sm:inset-0 sm:h-auto sm:bg-gradient-to-r sm:from-transparent sm:via-[#050a0b]/30 sm:to-[#050a0b]/85" />
+        <div className="relative flex flex-col justify-end gap-4 p-6 pt-2 sm:min-h-[260px] sm:pt-10 sm:items-end sm:p-10 sm:text-right">
+          <div className="space-y-2 text-[#f4efe2]">
+            <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[#f0c040]">Station 01 · Identify</p>
+            <h1 className="font-display text-4xl font-semibold tracking-tight sm:text-5xl">What's on the bench?</h1>
+            <p className="max-w-md text-sm text-[#f4efe2]/75 sm:ml-auto">Photograph a stone. Get a ranked match, an honest confidence ceiling, and the physical test that settles it.</p>
           </div>
-        )}
-      </PageHeader>
+          {u && (
+            <div className="flex items-center gap-3 rounded-full border border-white/15 bg-black/40 px-4 py-2 text-[#f4efe2] backdrop-blur" style={{ "--ink": "255 255 255" }} data-testid="identify-quota-meter">
+              <Pips used={u.scans_today} total={u.scan_limit} />
+              <span className="font-mono text-xs tabular-nums text-[#f4efe2]/75">{u.scan_limit - u.scans_today} scans left today</span>
+            </div>
+          )}
+        </div>
+      </header>
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
         <div className="aspect-[4/3] max-h-[560px] w-full lg:aspect-auto lg:h-[520px]">
           {busy && preview ? <Scanning preview={preview} /> : <Dropzone disabled={out || busy} onFile={run} />}

@@ -55,7 +55,8 @@ export const TopBar = ({ onOpenPalette }) => {
   const { data: u } = useUsage();
   return (
     <div className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-border bg-background/80 px-4 backdrop-blur-xl md:px-8">
-      <Link to="/identify" viewTransition className="whitespace-nowrap font-display text-base font-semibold md:hidden" data-testid="topbar-brand">
+      <Link to="/identify" viewTransition className="flex items-center gap-2 whitespace-nowrap font-display text-base font-semibold md:hidden" data-testid="topbar-brand">
+        <img src="/favicon-32.png" alt="" aria-hidden="true" className="h-6 w-6 rounded-md" />
         Field Bench
       </Link>
       <button
