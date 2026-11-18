@@ -20,3 +20,7 @@ fastlane/README.md
 GoogleService-Info.plist
 .venv/
 uploads/
+
+# Local agent scratch notes
+memory/
+.firebase/

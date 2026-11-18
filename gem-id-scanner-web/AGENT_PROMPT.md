@@ -1,6 +1,6 @@
 # Agent prompt: build the Gem ID Scanner web app
 
-Copy this file to the agent that will build the web client. Work only in `gem-id-scanner-web/`. Read the sibling packages. Do not change the iOS identification pipeline.
+The Chrome client in this directory is already built. iPhone scans send every photograph to Gemini and keep the on-device color rank only when Gemini does not answer. The route lines below still describe whichever route actually answered.
 
 ## Outcome
 

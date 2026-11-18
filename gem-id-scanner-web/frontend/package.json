@@ -82,7 +82,8 @@
   "scripts": {
     "start": "craco start",
     "build": "craco build",
-    "test": "craco test"
+    "test": "craco test",
+    "build:hosting": "REACT_APP_BACKEND_URL= REACT_APP_FIREBASE_APPCHECK_DEBUG_TOKEN= craco build"
   },
   "browserslist": {
     "production": [

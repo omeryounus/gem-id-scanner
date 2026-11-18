@@ -10,7 +10,18 @@ firebase deploy --only firestore:rules
 
 `GoogleService-Info.plist` and debug tokens stay out of git.
 
-## What to build
+## Run it
+
+```bash
+cd gem-id-scanner-backend
+python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+# .env: MONGO_URL, DB_NAME, CORS_ORIGINS, optional UPLOADS_DIR (default ./uploads)
+.venv/bin/uvicorn server:app --port 8000
+```
+
+The server never calls a model. Identification runs in the clients through Firebase AI Logic. `POST /api/identify` is a colour-shortlist fallback for a web build without Firebase config. Photos are written to `UPLOADS_DIR`.
+
+## API contract
 
 A small authenticated JSON API. The contract is [`openapi.yaml`](openapi.yaml). The web prompt in [`../gem-id-scanner-web/AGENT_PROMPT.md`](../gem-id-scanner-web/AGENT_PROMPT.md) is the product spec for the responses.
 

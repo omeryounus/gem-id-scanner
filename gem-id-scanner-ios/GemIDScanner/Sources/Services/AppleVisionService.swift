@@ -162,7 +162,7 @@ public final class AppleVisionService: @unchecked Sendable {
             }
         } catch {
             if let onDeviceAnswer {
-                return onDeviceAnswer
+                return onDeviceAnswer.markingPhotoSent()
             }
             return unavailableShortlist(
                 stage1: stage1,
@@ -171,7 +171,7 @@ public final class AppleVisionService: @unchecked Sendable {
         }
 
         if let onDeviceAnswer {
-            return onDeviceAnswer
+            return onDeviceAnswer.markingPhotoSent()
         }
         return unavailableShortlist(
             stage1: stage1,

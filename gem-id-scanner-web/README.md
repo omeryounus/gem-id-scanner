@@ -1,6 +1,6 @@
 # Gem ID Scanner for web
 
-Chrome client for the same catalog and the same hybrid decision as the iPhone.
+Chrome client for the same catalog as the iPhone. The photo decision is different: a confident Gemini Nano rank stays in the browser. The iPhone sends every scan photo to Gemini.
 
 A scan measures colour in the browser, then calls Firebase AI Logic. Gemini Nano ranks that colour brief when Chrome has the on-device model. The photograph stays in the browser when that rank is at or above `cloud_escalation_threshold` (default 0.55). Otherwise cloud Gemini sees the photo. The result names the route: `on_device`, `cloud_text`, `cloud_vision`, or `shortlist`. The page does not embed a Gemini API key.
 
@@ -12,7 +12,11 @@ npm install
 npm start
 ```
 
-The API defaults to `http://localhost:8000`. Set these in `frontend/.env` before a hybrid scan. Without them, scans use the colour shortlist.
+Live demo: https://field-bench-gem.web.app
+
+With no `REACT_APP_BACKEND_URL`, the app runs on its own. `src/lib/localApi.js` answers the same routes as the backend, keeping the catalog, scans, and records in localStorage and photos in IndexedDB. That is how the hosted demo runs. Set `REACT_APP_BACKEND_URL` to use [the backend](../gem-id-scanner-backend/) instead.
+
+Set these in `frontend/.env` before a hybrid scan. Without the Firebase values, scans use the colour shortlist.
 
 ```
 REACT_APP_BACKEND_URL=http://localhost:8000
@@ -29,4 +33,15 @@ Use a Firebase web app in the same project as the iOS app. Enforce App Check for
 
 Gemini Nano needs Chrome on desktop, version 139 or newer, with `chrome://flags/#prompt-api-for-gemini-nano-multimodal-input` set to Enabled. The first on-device scan calls `initializeDeviceModel()` from the click that started the scan.
 
-The client also stores catalog records through [the backend API](../gem-id-scanner-backend/openapi.yaml). A cloud-vision photo is the only scan image that API stores.
+When a backend URL is set, the client stores records through [the backend API](../gem-id-scanner-backend/openapi.yaml). A cloud-vision photo is the only scan image that API stores.
+
+## Deploy to Firebase Hosting
+
+```bash
+cd gem-id-scanner-web/frontend
+npm run build:hosting   # builds with no backend URL and no App Check debug token
+cd ..
+firebase deploy --only hosting --project field-bench-gem
+```
+
+The hosted build does not include a debug token. Before turning on App Check enforcement, add `REACT_APP_FIREBASE_RECAPTCHA_SITE_KEY`, or visitors will be blocked.

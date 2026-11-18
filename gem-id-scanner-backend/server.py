@@ -1,7 +1,5 @@
 import asyncio
-import base64
 import io
-import json
 import logging
 import os
 import re
@@ -35,7 +33,6 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(level
 SCAN_LIMIT = 5
 SAVE_LIMIT = 20
 CONFIDENCE_CAP = 0.96
-GEMINI_MODEL = "gemini-3-flash-preview"
 APP_NAME = "field-bench"
 
 INDEXES: dict[str, list[IndexModel]] = {
@@ -69,15 +66,9 @@ async def ensure_indexes() -> None:
                 logger.error("ensure_indexes(%s.%s): %s", collection, model.document["name"], exc)
 
 
-# ---------- Object storage ----------
-STORAGE_BASE = (os.environ.get("INTEGRATION_PROXY_URL") or "").strip() or "https://integrations.emergentagent.com"
-STORAGE_URL = STORAGE_BASE.rstrip("/") + "/objstore/api/v1/storage"
-LOCAL_UPLOADS = ROOT_DIR / "uploads"
-_storage_key: Optional[str] = None
-
-
-def storage_is_local() -> bool:
-    return not (os.environ.get("EMERGENT_LLM_KEY") or "").strip()
+# ---------- Photo storage ----------
+# Photos are written under UPLOADS_DIR (default ./uploads).
+LOCAL_UPLOADS = Path(os.environ.get("UPLOADS_DIR") or ROOT_DIR / "uploads")
 
 
 def local_file(path: str) -> Path:
@@ -88,39 +79,19 @@ def local_file(path: str) -> Path:
     return dest
 
 
-def init_storage(force: bool = False) -> str:
-    global _storage_key
-    if storage_is_local():
-        LOCAL_UPLOADS.mkdir(parents=True, exist_ok=True)
-        _storage_key = "local"
-        return _storage_key
-    if _storage_key and not force:
-        return _storage_key
-    resp = requests.post(f"{STORAGE_URL}/init", json={"emergent_key": os.environ.get("EMERGENT_LLM_KEY")}, timeout=30)
-    resp.raise_for_status()
-    _storage_key = resp.json()["storage_key"]
-    return _storage_key
+def init_storage() -> None:
+    LOCAL_UPLOADS.mkdir(parents=True, exist_ok=True)
 
 
 def put_object(path: str, data: bytes, content_type: str) -> dict:
-    if storage_is_local():
-        dest = local_file(path)
-        dest.parent.mkdir(parents=True, exist_ok=True)
-        dest.write_bytes(data)
-        return {"path": path}
-    resp = requests.put(f"{STORAGE_URL}/objects/{path}", headers={"X-Storage-Key": init_storage(), "Content-Type": content_type}, data=data, timeout=120)
-    if resp.status_code == 404:
-        resp = requests.put(f"{STORAGE_URL}/objects/{path}", headers={"X-Storage-Key": init_storage(True), "Content-Type": content_type}, data=data, timeout=120)
-    resp.raise_for_status()
-    return resp.json()
+    dest = local_file(path)
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_bytes(data)
+    return {"path": path}
 
 
 def get_object(path: str) -> tuple[bytes, str]:
-    if storage_is_local():
-        return local_file(path).read_bytes(), "application/octet-stream"
-    resp = requests.get(f"{STORAGE_URL}/objects/{path}", headers={"X-Storage-Key": init_storage()}, timeout=60)
-    resp.raise_for_status()
-    return resp.content, resp.headers.get("Content-Type", "application/octet-stream")
+    return local_file(path).read_bytes(), "application/octet-stream"
 
 
 # ---------- Helpers ----------
@@ -211,26 +182,6 @@ def shortlist_minerals(colors: list[dict]) -> list[dict]:
             scored.append((s / len(m["colors"]) ** 0.3, m))
     scored.sort(key=lambda x: -x[0])
     return [{"id": m["id"], "score": round(s, 3)} for s, m in scored[:8]]
-
-
-SYSTEM_PROMPT = (
-    "You are a field mineralogist. Identify the specimen in the photo using ONLY these catalog ids: "
-    + ", ".join(f"{m['id']} ({m['name']})" for m in MINERALS)
-    + ". Reply with strict JSON only, no prose, shaped as "
-    '{"candidates":[{"id":"catalog id","confidence":0.0-1.0,"why":"one short sentence"}],'
-    '"observed":{"colors":["..."],"luster":"...","habit":"..."},"summary":"two sentences max"}. '
-    "Give 3-5 candidates ranked best first. Be conservative: photos cannot confirm hardness or streak. "
-    "If the photo is not a mineral, return low confidences."
-)
-
-
-async def gemini_identify(image_b64: str, colors: list[dict], aid: str) -> dict:
-    from emergentintegrations.llm.chat import ImageContent, LlmChat, UserMessage
-    chat = LlmChat(api_key=os.environ["GEMINI_API_KEY"], session_id=f"scan-{aid}", system_message=SYSTEM_PROMPT).with_model("gemini", GEMINI_MODEL)
-    hint = ", ".join(f"{c['color']} {int(c['share'] * 100)}%" for c in colors)
-    text = await chat.send_message(UserMessage(text=f"Identify this specimen. Measured colour shortlist: {hint}.", file_contents=[ImageContent(image_base64=image_b64)]))
-    match = re.search(r"\{.*\}", text, re.S)
-    return json.loads(match.group(0))
 
 
 # ---------- Models ----------
@@ -333,8 +284,7 @@ async def get_mineral(mid: str):
 async def usage(sid: str = Depends(session_id)):
     scans = await db.analyses.count_documents({"session_id": sid, "day": today()})
     saved = await db.records.count_documents({"session_id": sid})
-    return {"scans_today": scans, "scan_limit": SCAN_LIMIT, "saved": saved, "save_limit": SAVE_LIMIT,
-            "vision_ready": bool(os.environ.get("GEMINI_API_KEY"))}
+    return {"scans_today": scans, "scan_limit": SCAN_LIMIT, "saved": saved, "save_limit": SAVE_LIMIT}
 
 
 MAX_UPLOAD = 12 * 1024 * 1024
@@ -374,20 +324,12 @@ async def identify(file: UploadFile = File(...), sid: str = Depends(session_id))
     colors = color_shortlist(img)
     short = shortlist_minerals(colors)
 
-    engine, model, summary, observed, raw = "shortlist", None, "", {}, []
-    if os.environ.get("GEMINI_API_KEY"):
-        try:
-            out = await gemini_identify(base64.b64encode(data).decode(), colors, aid)
-            raw = [c for c in out.get("candidates", []) if c.get("id") in MINERAL_INDEX]
-            summary, observed = out.get("summary", ""), out.get("observed", {})
-            if raw:
-                engine, model = "cloud_vision", GEMINI_MODEL
-        except Exception as exc:
-            logger.error("gemini identify failed: %s", exc)
-    if engine == "shortlist":
-        top_score = short[0]["score"] if short else 1
-        raw = [{"id": s["id"], "confidence": 0.45 * s["score"] / top_score, "why": "Colour match against catalog palette"} for s in short[:5]]
-        summary = summary or "Vision engine unavailable — ranked by measured colour only. Run the separating tests to confirm."
+    # Model calls happen in the clients through Firebase AI Logic. This route is
+    # the colour-shortlist fallback for a web build without Firebase config.
+    engine, model, observed = "shortlist", None, {}
+    top_score = short[0]["score"] if short else 1
+    raw = [{"id": s["id"], "confidence": 0.45 * s["score"] / top_score, "why": "Colour match against catalog palette"} for s in short[:5]]
+    summary = "Ranked by measured colour only. Run the separating tests to confirm."
 
     candidates = []
     for i, c in enumerate(raw[:5]):

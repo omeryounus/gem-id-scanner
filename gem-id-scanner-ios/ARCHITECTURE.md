@@ -40,7 +40,7 @@ The application follows an **MVVM + Coordinator** architectural pattern with uni
 
 The two stages run in sequence. Stage 1 never calls a language model. Stage 2 always goes through Firebase AI Logic when a real `GoogleService-Info.plist` is in the app bundle. Without that file the app keeps the color shortlist and says why.
 
-Firebase AI Logic's on-device hybrid path accepts text only. Sending the photo into the hybrid session would force a cloud fallback, so a capable iPhone ranks a measured color sentence and the JPEG stays on the device. The photo is uploaded only when Apple Intelligence is unavailable, the hybrid session itself fell back to cloud text, or the on-device score is below `cloud_escalation_threshold` (default 0.55, Remote Config).
+Firebase AI Logic's on-device hybrid path accepts text only, so the iPhone ranks a measured color sentence in that session and does not attach the JPEG there. The photograph is still sent to Gemini through a separate Firebase AI Logic call on every configured scan. The on-device rank is kept only when Gemini does not return a catalog identification. `cloud_escalation_threshold` (default 0.55, Remote Config) is the Chrome rule for skipping that upload. The iPhone does not use it to hold the photo back.
 
 ```
 [Captured Frame / Photo]
@@ -54,13 +54,12 @@ Firebase AI Logic's on-device hybrid path accepts text only. Sending the photo i
           ▼
 [Firebase AI Logic hybrid session — text brief only]
           │
-          ├── modelVersion is the Apple on-device model
-          │   AND score >= threshold
-          │        → keep the local rank, photo stays on device
+          ▼
+[Firebase AI Logic cloud Gemini, JPEG attached]
           │
-          └── otherwise
-                   ▼
-        [Firebase AI Logic cloud Gemini, JPEG attached]
+          ├── catalog JSON returned → that rank, photo left the iPhone
+          │
+          └── no catalog rank → keep the on-device color rank
                    │
                    ▼
         [IdentificationCoordinator merge, cap 96%]

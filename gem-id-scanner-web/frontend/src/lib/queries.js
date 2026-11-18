@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { api } from "@/lib/api";
+import { api, localMode } from "@/lib/api";
 import { firebaseConfigured } from "@/lib/firebaseApp";
 import { identifyHybrid } from "@/lib/hybridIdentify";
 import { saveLocalPhoto } from "@/lib/localPhotos";
@@ -31,7 +31,8 @@ const useInvalidate = (...keys) => {
 async function saveHybrid(draft, blob) {
   const fd = new FormData();
   fd.append("result", JSON.stringify(draft));
-  if (draft.engine === "cloud_vision") fd.append("file", blob, blob.name || "specimen.jpg");
+  // A remote backend stores only photos Gemini saw. Local mode keeps every photo in this browser.
+  if (draft.engine === "cloud_vision" || localMode) fd.append("file", blob, blob.name || "specimen.jpg");
   const saved = await api.post("/analyses", fd).then((r) => r.data);
   await saveLocalPhoto(saved.id, blob).catch(() => {});
   return saved;

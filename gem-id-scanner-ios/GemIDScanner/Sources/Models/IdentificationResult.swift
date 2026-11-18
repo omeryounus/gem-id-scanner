@@ -64,11 +64,15 @@ public struct Stage2Inference: Codable, Hashable, Sendable {
     public var engineSummary: String {
         switch inferenceRoute {
         case "on_device":
-            return "Firebase AI Logic · Apple Intelligence on this iPhone. The photo stayed on the device."
+            return photoLeftDevice
+                ? "Firebase AI Logic · Apple Intelligence on this iPhone. The photo was sent to Gemini."
+                : "Firebase AI Logic · Apple Intelligence on this iPhone. The photo stayed on the device."
         case "cloud_vision":
             return "Firebase AI Logic · Gemini examined the photo\(modelVersion.isEmpty ? "" : " (\(modelVersion))")."
         case "cloud_text":
-            return "Firebase AI Logic · Gemini ranked the on-device color brief. The photo stayed on the device."
+            return photoLeftDevice
+                ? "Firebase AI Logic · Gemini ranked the color brief. The photo was also sent to Gemini."
+                : "Firebase AI Logic · Gemini ranked the on-device color brief. The photo stayed on the device."
         default:
             return "Color shortlist only. Firebase AI Logic did not return a catalog rank."
         }
@@ -106,6 +110,27 @@ public struct Stage2Inference: Codable, Hashable, Sendable {
         self.inferenceRoute = inferenceRoute
         self.modelVersion = modelVersion
         self.photoLeftDevice = photoLeftDevice
+    }
+
+    /// The vision call was attempted, so the result must not say the photo stayed on the iPhone.
+    public func markingPhotoSent() -> Stage2Inference {
+        Stage2Inference(
+            topMineralName: topMineralName,
+            score: score,
+            reasoning: reasoning,
+            visualCuesObserved: visualCuesObserved,
+            suggestedTests: suggestedTests,
+            lookalikeDisambiguation: lookalikeDisambiguation,
+            candidate2Name: candidate2Name,
+            candidate2Score: candidate2Score,
+            candidate3Name: candidate3Name,
+            candidate3Score: candidate3Score,
+            family: family,
+            identifiedForm: identifiedForm,
+            inferenceRoute: inferenceRoute,
+            modelVersion: modelVersion,
+            photoLeftDevice: true
+        )
     }
 }
 

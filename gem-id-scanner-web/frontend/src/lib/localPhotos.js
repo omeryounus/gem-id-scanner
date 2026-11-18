@@ -23,6 +23,21 @@ export async function saveLocalPhoto(id, blob) {
   db.close();
 }
 
+export async function readLocalPhoto(id) {
+  const db = await openDb();
+  return new Promise((resolve) => {
+    const request = db.transaction(STORE, "readonly").objectStore(STORE).get(id);
+    request.onsuccess = () => {
+      db.close();
+      resolve(request.result || null);
+    };
+    request.onerror = () => {
+      db.close();
+      resolve(null);
+    };
+  });
+}
+
 export function useLocalPhoto(id) {
   const [url, setUrl] = useState(null);
   useEffect(() => {
