@@ -7,7 +7,7 @@ Platforms: iOS and Web (Chrome). Android is not part of this submission.
 Repository: https://github.com/omeryounus/gem-id-scanner
 Demo video: https://youtu.be/koiRrSw7dTw
 License: Apache-2.0 (`LICENSE`). The GitHub About panel shows it.
-Try-it-out URL: https://field-bench-gem.web.app (Chrome; runs without a backend). iPhone: public TestFlight link once build 2026111701 is processed. Five scans a day and 20 saved specimens require no purchase.
+Try-it-out URL: https://field-bench-gem.web.app (Chrome; runs without a backend). iPhone: public TestFlight link https://testflight.apple.com/join/Kp7EKNa7 (build 1.0.0 (2026112103) or later). Five scans a day and 20 saved specimens require no purchase.
 
 No usage statistics are included. Do not add any unless they come from a real source.
 
