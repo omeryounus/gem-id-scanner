@@ -41,9 +41,9 @@ targets:
         DEVELOPMENT_TEAM: Z2RB57KVQ5
         CODE_SIGN_STYLE: Manual
         GENERATE_INFOPLIST_FILE: YES
-        INFOPLIST_KEY_CFBundleDisplayName: "Gem ID Scanner"
-        INFOPLIST_KEY_NSCameraUsageDescription: "Gem ID Scanner uses your camera to capture and identify gemstones, crystals, and minerals in real time."
-        INFOPLIST_KEY_NSPhotoLibraryUsageDescription: "Gem ID Scanner needs access to your photo library to import and identify mineral and gemstone photos."
+        INFOPLIST_KEY_CFBundleDisplayName: "Field Bench"
+        INFOPLIST_KEY_NSCameraUsageDescription: "Field Bench uses your camera to capture and identify gemstones, crystals, and minerals in real time."
+        INFOPLIST_KEY_NSPhotoLibraryUsageDescription: "Field Bench needs access to your photo library to import and identify mineral and gemstone photos."
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
         INFOPLIST_KEY_UISupportedInterfaceOrientations: "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"

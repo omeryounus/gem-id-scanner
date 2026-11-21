@@ -252,7 +252,7 @@ public struct PaywallView: View {
                     dismiss()
                 }
             } message: {
-                Text("Thank you for supporting Gem ID Scanner. Unlimited scans and full mineral databases are now active.")
+                Text("Thank you for supporting Field Bench. Unlimited scans and full mineral databases are now active.")
             }
             .sheet(isPresented: $showTermsSheet) {
                 NavigationStack {

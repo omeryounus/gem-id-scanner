@@ -41,10 +41,10 @@ public enum LegalDocumentContent {
     Last Updated: October 2026
 
     1. ACCEPTANCE OF TERMS
-    By downloading or using Gem ID Scanner ("the App"), you agree to these Terms. If you do not agree, do not use the App.
+    By downloading or using Field Bench ("the App"), you agree to these Terms. If you do not agree, do not use the App.
 
     2. GEMOLOGICAL DISCLAIMER — ADVISORY ONLY
-    Gem ID Scanner provides non-destructive optical suggestions based on visual features and multimodal AI. Visual identification alone CANNOT guarantee gemological authenticity. Always confirm valuable minerals using standardized physical tests (refractive index, specific gravity, Mohs hardness) performed by certified gemological laboratories.
+    Field Bench provides non-destructive optical suggestions based on visual features and multimodal AI. Visual identification alone CANNOT guarantee gemological authenticity. Always confirm valuable minerals using standardized physical tests (refractive index, specific gravity, Mohs hardness) performed by certified gemological laboratories.
 
     3. SUBSCRIPTIONS & IN-APP PURCHASES
     Subscriptions auto-renew unless cancelled at least 24 hours before the end of the current billing cycle in your Apple ID account settings.

@@ -47,7 +47,7 @@ public struct SettingsView: View {
                                 
                                 VStack(alignment: .leading, spacing: 3) {
                                     HStack {
-                                        Text("Gem ID Pro Active")
+                                        Text("Field Bench Pro Active")
                                             .font(.system(size: 16, weight: .bold, design: .rounded))
                                             .foregroundColor(.white)
                                         Text("PRO")
@@ -260,7 +260,7 @@ public struct SettingsView: View {
                     .listRowBackground(Color.white.opacity(0.04))
                     
                     // MARK: - About & Mineralogy Engine
-                    Section("About Gem ID Scanner") {
+                    Section("About Field Bench") {
                         HStack {
                             Text("Mineral Database")
                                 .foregroundColor(.white)
