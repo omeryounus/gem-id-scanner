@@ -121,10 +121,18 @@ public final class IdentificationCoordinator: ObservableObject {
         let name2 = stage2.topMineralName.trimmingCharacters(in: .whitespacesAndNewlines)
         
         let doesAgree = name1.caseInsensitiveCompare(name2) == .orderedSame
+        // Stage 1 only measures colour. When Gemini has examined the photograph,
+        // its ranking is the stronger evidence, so the colour shortlist must not
+        // drag its confidence down or replace its runner-up candidates.
+        let geminiSawPhoto = stage2.inferenceRoute == "cloud_vision" && !name2.isEmpty
+        let trustStage2Ranking = doesAgree || geminiSawPhoto
         let mergedScore: Double
         let primaryName: String
-        
-        if doesAgree {
+
+        if geminiSawPhoto {
+            mergedScore = min(stage2.score, 0.96)
+            primaryName = name2
+        } else if doesAgree {
             // Agreement: weighted average favoring Stage 2 vision reasoning, capped at 96%
             let weighted = (stage1.score * 0.35) + (stage2.score * 0.65)
             mergedScore = min(weighted, 0.96)
@@ -153,7 +161,7 @@ public final class IdentificationCoordinator: ObservableObject {
         
         // Candidate #2
         let secondaryName: String
-        if !doesAgree {
+        if !trustStage2Ranking {
             secondaryName = (primaryName == name1) ? name2 : name1
         } else if let s2c2 = stage2.candidate2Name, !s2c2.isEmpty, s2c2.caseInsensitiveCompare(primaryName) != .orderedSame {
             secondaryName = s2c2
@@ -164,7 +172,7 @@ public final class IdentificationCoordinator: ObservableObject {
         if secondaryName.caseInsensitiveCompare(primaryName) != .orderedSame {
             let secondaryMineral = database.find(byName: secondaryName)
             let secondaryScore: Double
-            if doesAgree {
+            if trustStage2Ranking {
                 if let s2Score = stage2.candidate2Score {
                     secondaryScore = min(s2Score, mergedScore - 0.15)
                 } else {
