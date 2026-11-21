@@ -5,6 +5,7 @@ Rules: https://firebasehybridaihackathon.devpost.com/rules
 Deadline: November 30, 2026, 3:00pm MST (2:00pm PST).
 Platforms: iOS and Web (Chrome). Android is not part of this submission.
 Repository: https://github.com/omeryounus/gem-id-scanner
+Demo video: https://youtu.be/koiRrSw7dTw
 License: Apache-2.0 (`LICENSE`). The GitHub About panel shows it.
 Try-it-out URL: https://field-bench-gem.web.app (Chrome; runs without a backend). iPhone: public TestFlight link once build 2026111701 is processed. Five scans a day and 20 saved specimens require no purchase.
 
@@ -74,6 +75,7 @@ Say in the video, in one sentence, that Stage 2 is a Firebase AI Logic call: App
 - [x] App Check debug tokens are registered for local web and iOS testing. Enforcement is still off. The hackathon accepts debug tokens. Do not commit a token. Turn enforcement on only after a production attestation provider exists, or a public site will block visitors.
 - [x] Make https://github.com/omeryounus/gem-id-scanner public. This is required. See the section above.
 - [x] Set the GitHub About license to Apache-2.0 so it is visible without opening `LICENSE`.
-- [ ] Publish the YouTube video and paste the URL into Devpost.
+- [x] Publish the YouTube video: https://youtu.be/koiRrSw7dTw
+- [ ] Paste the video URL into Devpost.
 - [ ] Paste the tagline and description from this file. Mention that the project is free to try, and that it runs on iPhone and in Chrome.
 - [ ] Submit on Devpost before November 30, 2026, 3:00pm MST.
