@@ -71,7 +71,7 @@ Say in the video, in one sentence, that Stage 2 is a Firebase AI Logic call: App
 - [x] Remote Config is published: `gemini_model_name` = `gemini-3.5-flash-lite`, `cloud_escalation_threshold` = `0.55`.
 - [x] Code is committed and pushed to `main`.
 - [x] Confirm one scan on the installed iPhone build. The result must say Gemini examined the photograph.
-- [ ] App Check debug tokens are registered for local web and iOS testing. Enforcement is still off. The hackathon accepts debug tokens. Do not commit a token. Turn enforcement on only after a production attestation provider exists, or a public site will block visitors.
+- [x] App Check debug tokens are registered for local web and iOS testing. Enforcement is still off. The hackathon accepts debug tokens. Do not commit a token. Turn enforcement on only after a production attestation provider exists, or a public site will block visitors.
 - [x] Make https://github.com/omeryounus/gem-id-scanner public. This is required. See the section above.
 - [x] Set the GitHub About license to Apache-2.0 so it is visible without opening `LICENSE`.
 - [ ] Publish the YouTube video and paste the URL into Devpost.
