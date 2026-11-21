@@ -24,3 +24,6 @@ uploads/
 # Local agent scratch notes
 memory/
 .firebase/
+
+# Old Emergent end-to-end test output
+gem-id-scanner-backend/test_reports/

@@ -5,7 +5,7 @@ Rules: https://firebasehybridaihackathon.devpost.com/rules
 Deadline: November 30, 2026, 3:00pm MST (2:00pm PST).
 Platforms: iOS and Web (Chrome). Android is not part of this submission.
 Repository: https://github.com/omeryounus/gem-id-scanner
-License: Apache-2.0 (`LICENSE`). The rules also require that license to show in the GitHub About panel. Set it after the repo is public.
+License: Apache-2.0 (`LICENSE`). The GitHub About panel shows it.
 Try-it-out URL: https://field-bench-gem.web.app (Chrome; runs without a backend). iPhone: public TestFlight link once build 2026111701 is processed. Five scans a day and 20 saved specimens require no purchase.
 
 No usage statistics are included. Do not add any unless they come from a real source.
@@ -16,7 +16,7 @@ Yes. A public repository is mandatory for this contest, not a preference.
 
 The official rules say the submission must include a GitHub or GitLab URL, and: "The repository must be public and open source by including an open source license file. This license should be detectable and visible at the top of the repository page (in the About section)." Apache is preferred. Any OSI license is allowed.
 
-Judges have to open the code and see Firebase AI Logic imported and called at runtime. A private repo fails that requirement even if the video and description are complete. `LICENSE` is already Apache-2.0. The repo is still private, and the About panel does not show the license yet. Do both before submitting.
+Judges have to open the code and see Firebase AI Logic imported and called at runtime. A private repo fails that requirement even if the video and description are complete. `LICENSE` is already Apache-2.0. The repo is public and the About panel shows Apache-2.0.
 
 Do not make it public until you are sure no `.env`, `GoogleService-Info.plist`, or App Check debug token is in the tree. Those files are gitignored and were not in the commit on `main`.
 
@@ -69,11 +69,11 @@ Say in the video, in one sentence, that Stage 2 is a Firebase AI Logic call: App
 - [x] Anonymous Authentication is on.
 - [x] `gem-id-scanner-backend/firebase/firestore.rules` is deployed. Authenticated users can write only their own label corrections. Photo fields are rejected.
 - [x] Remote Config is published: `gemini_model_name` = `gemini-3.5-flash-lite`, `cloud_escalation_threshold` = `0.55`.
-- [x] Code is committed and pushed to `main` (`0e8ca34`).
-- [ ] Confirm one scan on the installed iPhone build. The result must say Gemini examined the photograph.
+- [x] Code is committed and pushed to `main`.
+- [x] Confirm one scan on the installed iPhone build. The result must say Gemini examined the photograph.
 - [ ] App Check debug tokens are registered for local web and iOS testing. Enforcement is still off. The hackathon accepts debug tokens. Do not commit a token. Turn enforcement on only after a production attestation provider exists, or a public site will block visitors.
-- [ ] Make https://github.com/omeryounus/gem-id-scanner public. This is required. See the section above.
-- [ ] Set the GitHub About license to Apache-2.0 so it is visible without opening `LICENSE`.
+- [x] Make https://github.com/omeryounus/gem-id-scanner public. This is required. See the section above.
+- [x] Set the GitHub About license to Apache-2.0 so it is visible without opening `LICENSE`.
 - [ ] Publish the YouTube video and paste the URL into Devpost.
 - [ ] Paste the tagline and description from this file. Mention that the project is free to try, and that it runs on iPhone and in Chrome.
 - [ ] Submit on Devpost before November 30, 2026, 3:00pm MST.
